@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tableau de Bord — Centre d'Appel</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --yellow:#F5A623;
+  --yellow-light:#FFF3DC;
+  --yellow-dark:#E09000;
+  --orange:#F47C00;
+  --white:#FFFFFF;
+  --bg:#F4F6F9;
+  --sidebar-w:260px;
+  --text:#1A1A1A;
+  --text-muted:#6B7280;
+  --border:#E5E7EB;
+  --green:#22C55E;
+  --red:#EF4444;
+  --header-h:64px;
+}
+
+body{
+  font-family:'IBM Plex Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ── HEADER ── */
+.header{
+  height:var(--header-h);
+  background:var(--white);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  padding:0 24px;
+  gap:16px;
+  position:sticky;top:0;z-index:50;
+}
+.header-title{
+  font-size:18px;font-weight:700;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  flex:1;
+}
+.header-search{
+  display:flex;align-items:center;gap:8px;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:8px 14px;
+  width:260px;
+}
+.header-search input{
+  border:none;background:transparent;
+  font-size:14px;color:var(--text);outline:none;width:100%;
+}
+.header-search svg{color:var(--text-muted);}
+.header-actions{display:flex;align-items:center;gap:16px;}
+.notif-btn{
+  display:flex;align-items:center;gap:6px;
+  font-size:14px;color:var(--text);
+  background:none;border:none;cursor:pointer;
+}
+.notif-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--yellow);
+  position:relative;top:-6px;left:-6px;
+}
+.avatar-btn{
+  display:flex;align-items:center;gap:8px;
+  background:none;border:none;cursor:pointer;
+}
+.avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--yellow);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:13px;color:#fff;
+}
+.avatar-info{text-align:left;}
+.avatar-info .name{font-size:14px;font-weight:600;}
+.avatar-info .role{font-size:11px;color:var(--text-muted);}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar-w);
+  background:var(--white);
+  border-right:1px solid var(--border);
+  padding:20px 0;
+  display:flex;flex-direction:column;
+  gap:0;
+  position:sticky;top:var(--header-h);
+  height:calc(100vh - var(--header-h));
+  overflow-y:auto;
+}
+
+/* Stats section */
+.sidebar-section-title{
+  font-size:11px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text-muted);
+  padding:0 20px 10px;
+}
+.stat-card{
+  margin:0 12px 10px;
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px 16px;
+  display:flex;align-items:flex-start;gap:12px;
+  transition:box-shadow .2s;
+}
+.stat-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.08);}
+.stat-icon{
+  width:44px;height:44px;border-radius:10px;
+  background:var(--yellow);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  font-size:20px;
+}
+.stat-body{flex:1;}
+.stat-label{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.stat-row{display:flex;align-items:center;gap:6px;}
+.stat-value{font-size:22px;font-weight:700;color:var(--text);}
+.stat-value.na{font-size:20px;}
+.stat-dot{width:9px;height:9px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.stat-dot.red{background:var(--red);}
+.stat-sub{font-size:11px;color:var(--text-muted);margin-top:2px;display:flex;align-items:center;gap:6px;}
+.stat-sub-badge{
+  font-size:11px;font-weight:600;
+  color:var(--orange);
+  background:var(--yellow-light);
+  border-radius:4px;padding:1px 6px;
+}
+
+/* Nav */
+.sidebar-nav{margin-top:auto;padding-top:12px;border-top:1px solid var(--border);}
+.nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 20px;
+  font-size:14px;font-weight:500;
+  color:var(--text-muted);
+  cursor:pointer;
+  border-left:3px solid transparent;
+  transition:all .15s;
+  text-decoration:none;
+}
+.nav-item:hover{background:var(--bg);color:var(--text);}
+.nav-item.active{
+  background:var(--yellow-light);
+  color:var(--orange);
+  border-left-color:var(--orange);
+  font-weight:600;
+}
+.nav-item svg{width:18px;height:18px;flex-shrink:0;}
+
+/* ── MAIN ── */
+.main{flex:1;padding:24px;overflow-x:auto;}
+
+.table-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+}
+.table-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 24px;
+  border-bottom:1px solid var(--border);
+}
+.table-title{font-size:15px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;}
+.table-actions{display:flex;gap:10px;}
+.btn-filter{
+  display:flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:500;
+  padding:7px 14px;border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--white);cursor:pointer;
+  color:var(--text);
+  transition:background .15s;
+}
+.btn-filter:hover{background:var(--bg);}
+.btn-export{
+  display:flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:600;
+  padding:7px 16px;border-radius:8px;
+  border:none;
+  background:var(--yellow);cursor:pointer;
+  color:#fff;
+  transition:opacity .15s;
+}
+.btn-export:hover{opacity:.88;}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead tr{background:var(--bg);}
+th{
+  padding:12px 16px;
+  text-align:left;font-size:11px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text-muted);
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+th:first-child{
+  background:var(--orange);color:#fff;
+  text-align:center;width:48px;
+}
+td{
+  padding:13px 16px;
+  border-bottom:1px solid var(--border);
+  color:var(--text);
+  white-space:nowrap;
+}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#FAFAFA;}
+td:first-child{text-align:center;font-weight:700;color:var(--text-muted);background:var(--bg);}
+
+.agent-cell{display:flex;align-items:center;gap:10px;}
+.agent-avatar{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff;
+  flex-shrink:0;
+}
+
+.status-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;
+  font-size:11px;font-weight:600;
+}
+.status-actif{background:#DCFCE7;color:#15803D;}
+.status-pause{background:#FEF9C3;color:#A16207;}
+.status-absent{background:#FEE2E2;color:#B91C1C;}
+
+.csat-bar{display:flex;align-items:center;gap:8px;}
+.csat-track{
+  width:60px;height:5px;
+  background:var(--border);border-radius:3px;overflow:hidden;
+}
+.csat-fill{height:100%;border-radius:3px;background:var(--green);}
+.csat-fill.mid{background:var(--yellow);}
+.csat-fill.low{background:var(--red);}
+
+.equipe-badge{
+  display:inline-block;
+  padding:3px 10px;border-radius:20px;
+  font-size:11px;font-weight:600;
+  background:var(--yellow-light);color:var(--orange);
+}
+
+/* Responsive */
+@media(max-width:900px){
+  .sidebar{width:220px;}
+  .header-search{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-title">Tableau de Bord du Centre d'Appel</div>
+  <div class="header-search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" placeholder="Rechercher…">
+  </div>
+  <div class="header-actions">
+    <button class="notif-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span>Notifications</span>
+      <span class="notif-dot"></span>
+    </button>
+    <button class="avatar-btn">
+      <div class="avatar">JD</div>
+      <div class="avatar-info">
+        <div class="name">Profil</div>
+        <div class="role">Administrateur</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section-title">Statistiques Appels</div>
+
+    <div class="stat-card">
+      <div class="stat-icon">📊</div>
+      <div class="stat-body">
+        <div class="stat-label">Appels du Jour</div>
+        <div class="stat-row">
+          <div class="stat-value">347</div>
+          <div class="stat-dot"></div>
+        </div>
+        <div class="stat-sub">Aujourd'hui <span class="stat-sub-badge">+12%</span></div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">🕐</div>
+      <div class="stat-body">
+        <div class="stat-label">Temps Moyen de Communication</div>
+        <div class="stat-row">
+          <div class="stat-value">04:32</div>
+        </div>
+        <div class="stat-sub">Min:Sec</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">%</div>
+      <div class="stat-body">
+        <div class="stat-label">Niveau de Service</div>
+        <div class="stat-row">
+          <div class="stat-value">87%</div>
+          <div class="stat-dot"></div>
+        </div>
+        <div class="stat-sub">Taux de Réponse</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">📞</div>
+      <div class="stat-body">
+        <div class="stat-label">Appels en Attente</div>
+        <div class="stat-row">
+          <div class="stat-value">8</div>
+          <div class="stat-dot"></div>
+        </div>
+        <div class="stat-sub">Actuellement</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">✖</div>
+      <div class="stat-body">
+        <div class="stat-label">Taux d'Abandon</div>
+        <div class="stat-row">
+          <div class="stat-value">5%</div>
+          <div class="stat-dot red"></div>
+        </div>
+        <div class="stat-sub">Appels Perdus</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">😊</div>
+      <div class="stat-body">
+        <div class="stat-label">Satisfaction Client (CSAT)</div>
+        <div class="stat-row">
+          <div class="stat-value na">4.2/5</div>
+          <span class="stat-sub-badge">92%</span>
+        </div>
+        <div class="stat-sub">Avis</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item active" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Tableau de bord
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Équipes
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Rapports
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Paramètres
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Performances des Agents — 24 Mai 2026</div>
+        <div class="table-actions">
+          <button class="btn-filter">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            Filtrer
+          </button>
+          <button class="btn-export">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exporter
+          </button>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nom de l'Agent</th>
+            <th>Appels Reçus</th>
+            <th>Appels Traités</th>
+            <th>Durée Moyenne (DMC)</th>
+            <th>Satisfaction (CSAT)</th>
+            <th>Temps d'Attente Moyen</th>
+            <th>Équipe</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+
+</div>
+
+<script>
+const AVATAR_COLORS = ['#F5A623','#22C55E','#3B82F6','#8B5CF6','#EF4444','#06B6D4','#F97316','#10B981'];
+
+const agents = [
+  {nom:'Benali Karim',     recus:52, traites:49, dmc:'03:47', csat:4.8, attente:'00:42', equipe:'Équipe A', statut:'actif'},
+  {nom:'Moussaoui Sara',   recus:47, traites:45, dmc:'05:12', csat:4.5, attente:'00:58', equipe:'Équipe B', statut:'actif'},
+  {nom:'El Fassi Youssef', recus:38, traites:35, dmc:'04:30', csat:4.1, attente:'01:15', equipe:'Équipe A', statut:'pause'},
+  {nom:'Tahiri Nadia',     recus:61, traites:58, dmc:'03:20', csat:4.9, attente:'00:31', equipe:'Équipe C', statut:'actif'},
+  {nom:'Bensalem Omar',    recus:29, traites:26, dmc:'06:05', csat:3.7, attente:'01:40', equipe:'Équipe B', statut:'actif'},
+  {nom:'Amrani Leila',     recus:44, traites:41, dmc:'04:55', csat:4.3, attente:'00:50', equipe:'Équipe C', statut:'actif'},
+  {nom:'Chraibi Hassan',   recus:18, traites:14, dmc:'07:10', csat:3.2, attente:'02:05', equipe:'Équipe A', statut:'absent'},
+  {nom:'Ziani Fatima',     recus:55, traites:53, dmc:'03:58', csat:4.7, attente:'00:38', equipe:'Équipe B', statut:'actif'},
+  {nom:'Idrissi Soukaina', recus:63, traites:62, dmc:'03:10', csat:5.0, attente:'00:25', equipe:'Équipe C', statut:'actif'},
+  {nom:'Naciri Imane',     recus:40, traites:37, dmc:'05:30', csat:4.0, attente:'01:10', equipe:'Équipe A', statut:'pause'},
+  {nom:'Rhazi Samira',     recus:58, traites:56, dmc:'04:05', csat:4.6, attente:'00:44', equipe:'Équipe B', statut:'actif'},
+  {nom:'Lahlou Amine',     recus:33, traites:29, dmc:'05:50', csat:3.5, attente:'01:55', equipe:'Équipe C', statut:'actif'},
+];
+
+function initials(nom){
+  const parts = nom.trim().split(' ');
+  return (parts[0][0]||'')+(parts[1]?parts[1][0]:'');
+}
+
+function csatClass(v){ return v>=4.5?'':'mid'; }
+function csatPct(v){ return Math.round((v/5)*100); }
+
+function statusBadge(s){
+  if(s==='actif')  return `<span class="status-badge status-actif">● Actif</span>`;
+  if(s==='pause')  return `<span class="status-badge status-pause">● Pause</span>`;
+  return `<span class="status-badge status-absent">● Absent</span>`;
+}
+
+const tbody = document.getElementById('tbody');
+tbody.innerHTML = agents.map((a,i)=>{
+  const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+  const pct = csatPct(a.csat);
+  const cls = csatClass(a.csat);
+  return `<tr>
+    <td>${i+1}</td>
+    <td>
+      <div class="agent-cell">
+        <div class="agent-avatar" style="background:${color}">${initials(a.nom)}</div>
+        <span style="font-weight:500">${a.nom}</span>
+      </div>
+    </td>
+    <td>${a.recus}</td>
+    <td>${a.traites}</td>
+    <td>${a.dmc}</td>
+    <td>
+      <div class="csat-bar">
+        <span style="min-width:28px;font-weight:600">${a.csat}</span>
+        <div class="csat-track"><div class="csat-fill ${cls}" style="width:${pct}%"></div></div>
+      </div>
+    </td>
+    <td>${a.attente}</td>
+    <td><span class="equipe-badge">${a.equipe}</span></td>
+    <td>${statusBadge(a.statut)}</td>
+  </tr>`;
+}).join('');
+</script>
+</body>
+</html>
