@@ -1,6 +1,11 @@
 import {
+  addAgentVenteDocuments,
   createAgentVente,
   listAgentVentes,
 } from "@/domains/agent/agent-vente.controller";
 
-export { listAgentVentes as GET, createAgentVente as POST };
+export {
+  addAgentVenteDocuments as PATCH,
+  listAgentVentes as GET,
+  createAgentVente as POST,
+};

@@ -3,11 +3,16 @@ import { getDb } from "@/lib/mongodb";
 import type { DepartmentDocument } from "./department.types";
 
 const DEPARTMENTS_COLLECTION = "departments";
+let departmentsIndexesReady: Promise<string> | null = null;
 
 async function departmentsCollection(): Promise<Collection<DepartmentDocument>> {
   const db = await getDb();
   const collection = db.collection<DepartmentDocument>(DEPARTMENTS_COLLECTION);
-  await collection.createIndex({ name: 1 }, { unique: true });
+  departmentsIndexesReady ??= collection.createIndex(
+    { name: 1 },
+    { unique: true },
+  );
+  await departmentsIndexesReady;
   return collection;
 }
 

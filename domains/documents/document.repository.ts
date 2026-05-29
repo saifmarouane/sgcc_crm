@@ -3,11 +3,13 @@ import { getDb } from "@/lib/mongodb";
 import type { DocumentRecord } from "./document.types";
 
 const DOCUMENTS_COLLECTION = "documents";
+let documentsIndexesReady: Promise<string> | null = null;
 
 async function documentsCollection(): Promise<Collection<DocumentRecord>> {
   const db = await getDb();
   const collection = db.collection<DocumentRecord>(DOCUMENTS_COLLECTION);
-  await collection.createIndex({ user_id: 1 });
+  documentsIndexesReady ??= collection.createIndex({ user_id: 1 });
+  await documentsIndexesReady;
   return collection;
 }
 
@@ -30,6 +32,19 @@ export class DocumentRepository {
 
     const collection = await documentsCollection();
     return collection.findOne({ _id: new ObjectId(id) });
+  }
+
+  async findByIds(ids: string[]): Promise<DocumentRecord[]> {
+    const objectIds = ids
+      .filter((id) => ObjectId.isValid(id))
+      .map((id) => new ObjectId(id));
+
+    if (!objectIds.length) {
+      return [];
+    }
+
+    const collection = await documentsCollection();
+    return collection.find({ _id: { $in: objectIds } }).toArray();
   }
 
   async updateFile(id: string, documentFile: string): Promise<DocumentRecord | null> {

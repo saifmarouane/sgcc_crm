@@ -39,6 +39,11 @@ export class DocumentService {
     return toPublicDocument(document);
   }
 
+  async listByIds(ids: string[]): Promise<PublicDocument[]> {
+    const documents = await this.repository.findByIds(ids);
+    return documents.map(toPublicDocument);
+  }
+
   async update(id: string, input: UpdateDocumentInput): Promise<PublicDocument> {
     const documentFile = validateDocumentFile(input.document_file);
     const document = await this.repository.updateFile(id, documentFile);

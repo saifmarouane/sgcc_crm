@@ -3,6 +3,7 @@ import { toPublicNombreVente } from "./nombre-vente.mapper";
 import { NombreVenteRepository } from "./nombre-vente.repository";
 import type {
   IncrementNombreVenteInput,
+  AddVenteDocumentsInput,
   PublicNombreVente,
 } from "./nombre-vente.types";
 
@@ -14,8 +15,30 @@ export class NombreVenteService {
     const vente = await this.repository.incrementByUserAndDocument(
       data.user_id,
       data.document_id,
+      data.document_ids?.length ? data.document_ids : [data.document_id],
       data.reference ?? generateSaleReference(),
+      data.motif ?? "",
     );
+
+    return toPublicNombreVente(vente);
+  }
+
+  async addDocuments(input: AddVenteDocumentsInput): Promise<PublicNombreVente> {
+    const id = input.id?.trim();
+    const userId = input.user_id?.trim();
+    const documentIds = input.document_ids
+      ?.map((documentId) => documentId.trim())
+      .filter(Boolean);
+
+    if (!id || !userId || !documentIds.length) {
+      throw new AppError("id, user_id and document_ids are required.", 400);
+    }
+
+    const vente = await this.repository.addDocumentIds(id, userId, documentIds);
+
+    if (!vente) {
+      throw new AppError("Nombre vente not found.", 404);
+    }
 
     return toPublicNombreVente(vente);
   }
@@ -64,7 +87,9 @@ function validateIncrementInput(
 ): IncrementNombreVenteInput {
   const userId = input.user_id?.trim();
   const documentId = input.document_id?.trim();
+  const documentIds = input.document_ids?.map((id) => id.trim()).filter(Boolean);
   const reference = input.reference?.trim() || generateSaleReference();
+  const motif = input.motif?.trim() ?? "";
 
   if (!userId) {
     throw new AppError("user_id is required.", 400);
@@ -77,7 +102,9 @@ function validateIncrementInput(
   return {
     user_id: userId,
     document_id: documentId,
+    document_ids: documentIds?.length ? documentIds : [documentId],
     reference,
+    motif,
   };
 }
 

@@ -3,11 +3,13 @@ import { getDb } from "@/lib/mongodb";
 import type { UserDocument } from "./auth.types";
 
 const USERS_COLLECTION = "users";
+let usersIndexesReady: Promise<string> | null = null;
 
 async function usersCollection(): Promise<Collection<UserDocument>> {
   const db = await getDb();
   const collection = db.collection<UserDocument>(USERS_COLLECTION);
-  await collection.createIndex({ email: 1 }, { unique: true });
+  usersIndexesReady ??= collection.createIndex({ email: 1 }, { unique: true });
+  await usersIndexesReady;
   return collection;
 }
 

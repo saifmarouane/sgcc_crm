@@ -3,15 +3,19 @@ import { getDb } from "@/lib/mongodb";
 import type { NombreVenteDocument } from "./nombre-vente.types";
 
 const NOMBRE_VENTES_COLLECTION = "nombre_ventes";
+let nombreVentesIndexesReady: Promise<string[]> | null = null;
 
 async function nombreVentesCollection(): Promise<Collection<NombreVenteDocument>> {
   const db = await getDb();
   const collection = db.collection<NombreVenteDocument>(
     NOMBRE_VENTES_COLLECTION,
   );
-  await collection.createIndex({ user_id: 1 });
-  await collection.createIndex({ document_id: 1 });
-  await collection.createIndex({ user_id: 1, document_id: 1 }, { unique: true });
+  nombreVentesIndexesReady ??= Promise.all([
+    collection.createIndex({ user_id: 1 }),
+    collection.createIndex({ document_id: 1 }),
+    collection.createIndex({ user_id: 1, document_id: 1 }, { unique: true }),
+  ]);
+  await nombreVentesIndexesReady;
   return collection;
 }
 
@@ -19,7 +23,9 @@ export class NombreVenteRepository {
   async incrementByUserAndDocument(
     userId: string,
     documentId: string,
+    documentIds: string[],
     reference: string,
+    motif: string,
   ): Promise<NombreVenteDocument> {
     const now = new Date();
     const collection = await nombreVentesCollection();
@@ -30,7 +36,9 @@ export class NombreVenteRepository {
         $setOnInsert: {
           user_id: userId,
           document_id: documentId,
+          document_ids: documentIds,
           reference,
+          motif,
           saleInsertedAt: now,
           createdAt: now,
         },
@@ -45,6 +53,26 @@ export class NombreVenteRepository {
     }
 
     return vente;
+  }
+
+  async addDocumentIds(
+    id: string,
+    userId: string,
+    documentIds: string[],
+  ): Promise<NombreVenteDocument | null> {
+    if (!ObjectId.isValid(id)) {
+      return null;
+    }
+
+    const collection = await nombreVentesCollection();
+    return collection.findOneAndUpdate(
+      { _id: new ObjectId(id), user_id: userId },
+      {
+        $addToSet: { document_ids: { $each: documentIds } },
+        $set: { updatedAt: new Date() },
+      },
+      { returnDocument: "after" },
+    );
   }
 
   async incrementById(id: string): Promise<NombreVenteDocument | null> {

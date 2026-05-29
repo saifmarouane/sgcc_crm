@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -10,37 +10,56 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  useEffect(() => {
+    router.prefetch("/admin");
+    router.prefetch("/agent");
+  }, [router]);
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setIsSubmitting(true);
+    setIsNavigating(false);
+    let navigated = false;
 
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await response.json().catch(() => ({}));
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
-      setMessage(data.error ?? "Login failed.");
-      return;
+      if (!response.ok) {
+        setMessage(data.error ?? "Login failed.");
+        return;
+      }
+
+      localStorage.setItem("sgcc_token", data.token);
+      localStorage.setItem("sgcc_user", JSON.stringify(data.user));
+      navigated = true;
+      setIsNavigating(true);
+
+      if (data.user.role === "admin") {
+        router.replace("/admin");
+        return;
+      }
+
+      if (data.user.role === "agent") {
+        router.replace("/agent");
+        return;
+      }
+
+      setIsNavigating(false);
+      setMessage("No interface is configured for this role.");
+    } finally {
+      if (!navigated) {
+        setIsSubmitting(false);
+      }
     }
-
-    localStorage.setItem("sgcc_token", data.token);
-    localStorage.setItem("sgcc_user", JSON.stringify(data.user));
-
-    if (data.user.role === "admin") {
-      router.push("/admin");
-      return;
-    }
-
-    if (data.user.role === "agent") {
-      router.push("/agent");
-      return;
-    }
-
-    setMessage("No interface is configured for this role.");
   }
 
   return (
@@ -201,8 +220,15 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <button className="login-submit" type="submit">
-            Se connecter
+          <button className="login-submit" disabled={isSubmitting} type="submit">
+            {isSubmitting ? (
+              <span className="button-loading-label">
+                <span className="button-spinner" />
+                {isNavigating ? "Ouverture..." : "Connexion..."}
+              </span>
+            ) : (
+              "Se connecter"
+            )}
           </button>
         </form>
       </section>

@@ -30,6 +30,17 @@ export async function createUser(request: NextRequest) {
   }
 }
 
+export async function getUser(request: NextRequest, context: RouteContext) {
+  try {
+    requireRole(request, "admin");
+    const { id } = await context.params;
+    const user = await authService.getCurrentUser(id);
+    return NextResponse.json({ user });
+  } catch (error) {
+    return handleHttpError(error);
+  }
+}
+
 export async function updateUser(request: NextRequest, context: RouteContext) {
   try {
     requireRole(request, "admin");

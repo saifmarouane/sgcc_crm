@@ -3,8 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/check-node-version.js",
     "dev": "next dev",
+    "prebuild": "node scripts/check-node-version.js",
     "build": "next build",
+    "prestart": "node scripts/check-node-version.js",
     "start": "next start",
     "lint": "next lint"
   },

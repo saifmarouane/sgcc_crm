@@ -35,3 +35,44 @@ export function requireRole(
 
   return payload;
 }
+
+export function requireAnyRole(
+  request: NextRequest,
+  roles: UserRole[],
+): JwtUserPayload {
+  const payload = requireAuth(request);
+
+  if (!roles.includes(payload.role)) {
+    throw new AppError("Forbidden.", 403);
+  }
+
+  return payload;
+}
+
+export function isSalesManager(payload: JwtUserPayload): boolean {
+  return payload.role === "admin";
+}
+
+export function isSupervisor(payload: JwtUserPayload): boolean {
+  return payload.role === "manager";
+}
+
+export function isAgent(payload: JwtUserPayload): boolean {
+  return payload.role === "agent";
+}
+
+export function canAccessAgentScope(
+  payload: JwtUserPayload,
+  agentId: string,
+  agentDepartmentId?: string,
+): boolean {
+  if (isSalesManager(payload)) {
+    return true;
+  }
+
+  if (isSupervisor(payload)) {
+    return Boolean(agentDepartmentId && agentDepartmentId === payload.department_id);
+  }
+
+  return payload.sub === agentId;
+}
