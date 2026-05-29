@@ -208,7 +208,13 @@ export default function ManagerPage() {
       const teamPayload = await teamResponse.json().catch(() => ({}));
 
       if (!meResponse.ok || mePayload.user?.role !== "manager") {
-        router.push(mePayload.user?.role === "admin" ? "/admin" : "/login");
+        router.push(
+          mePayload.user?.role === "admin"
+            ? "/admin"
+            : mePayload.user?.role === "agent"
+              ? "/agent"
+              : "/login",
+        );
         return;
       }
 
@@ -357,7 +363,10 @@ export default function ManagerPage() {
 
       <aside className="manager-sidebar">
         <div className="manager-brand">
-          <div className="manager-logo">SG</div>
+          <div className="manager-logo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="SGCC" src="/uploads/images/logo.png" />
+          </div>
           <div>
             <strong>Supervision</strong>
             <span>{user?.name ?? "Manager"}</span>

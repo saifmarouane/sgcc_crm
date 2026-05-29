@@ -297,8 +297,18 @@ export default function AgentPage() {
       const dashboardPayload = await dashboardResponse.json().catch(() => ({}));
 
       if (!meResponse.ok || mePayload.user?.role !== "agent") {
-        localStorage.removeItem("sgcc_token");
-        router.push("/login");
+        if (!meResponse.ok) {
+          localStorage.removeItem("sgcc_token");
+          localStorage.removeItem("sgcc_user");
+        }
+
+        router.push(
+          mePayload.user?.role === "admin"
+            ? "/admin"
+            : mePayload.user?.role === "manager"
+              ? "/manager"
+              : "/login",
+        );
         return;
       }
 
@@ -794,7 +804,10 @@ export default function AgentPage() {
 
       <aside className="agent-sidebar">
         <div className="agent-brand">
-          <div className="agent-logo">SG</div>
+          <div className="agent-logo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="SGCC" src="/uploads/images/logo.png" />
+          </div>
           <div>
             <strong>SGCC Agents</strong>
             <span>Sales workspace</span>

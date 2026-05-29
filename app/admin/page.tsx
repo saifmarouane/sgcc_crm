@@ -539,7 +539,13 @@ export default function AdminPage() {
         const data = await response.json().catch(() => ({}));
 
         if (!response.ok || data.user?.role !== "admin") {
-          router.push(data.user?.role === "agent" ? "/agent" : "/login");
+          router.push(
+            data.user?.role === "agent"
+              ? "/agent"
+              : data.user?.role === "manager"
+                ? "/manager"
+                : "/login",
+          );
           return;
         }
 
@@ -1066,8 +1072,10 @@ export default function AdminPage() {
 
       <aside className="admin-v2-sidebar">
         <div className="admin-v2-brand">
-          {/* image logo path  public\uploads\images\logo.png */}
-          {/* <div className="admin-v2-logo" style={{ backgroundImage: `url(/uploads/images/logo.png)` }}></div> */}
+          <div className="admin-v2-logo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="SGCC" src="/uploads/images/logo.png" />
+          </div>
           <div>
             <strong>SGCC Agents</strong>
             <span>Command Center</span>

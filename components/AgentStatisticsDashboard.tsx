@@ -119,6 +119,7 @@ export default function AgentStatisticsDashboard() {
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFullscreenGuide, setShowFullscreenGuide] = useState(true);
+  const [accessDeniedRole, setAccessDeniedRole] = useState("");
 
   const loadStatistics = useCallback(
     async (authToken = token) => {
@@ -168,11 +169,23 @@ export default function AgentStatisticsDashboard() {
       .then(async (response) => {
         const data = await response.json().catch(() => ({}));
 
-        if (!response.ok || !["admin", "manager"].includes(data.user?.role)) {
-          router.push(data.user?.role === "agent" ? "/agent" : "/login");
+        if (!response.ok) {
+          localStorage.removeItem("sgcc_token");
+          localStorage.removeItem("sgcc_user");
+          router.push("/login");
           return;
         }
 
+        if (!["admin", "manager"].includes(data.user?.role)) {
+          setAccessDeniedRole(data.user?.role ?? "unknown");
+          setError(
+            "Cette page est reservee aux administrateurs et superviseurs.",
+          );
+          setLoading(false);
+          return;
+        }
+
+        setAccessDeniedRole("");
         setToken(storedToken);
         await loadStatistics(storedToken);
       })
@@ -290,9 +303,15 @@ export default function AgentStatisticsDashboard() {
       ) : null}
 
       <header className="agent-stats-header">
-        <div>
-          <p>Performance commerciale</p>
-          <h1>Statistiques agents</h1>
+        <div className="agent-stats-title">
+          <div className="agent-stats-logo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="SGCC" src="/uploads/images/logo.png" />
+          </div>
+          <div>
+            <p>Performance commerciale</p>
+            <h1>Statistiques agents</h1>
+          </div>
         </div>
         <div className="agent-stats-actions">
           <input
@@ -362,6 +381,25 @@ export default function AgentStatisticsDashboard() {
       <section className="agent-stats-main">
         {error ? <p className="agent-stats-error">{error}</p> : null}
 
+        {accessDeniedRole ? (
+          <section className="agent-stats-access-card">
+            <h2>Acces non autorise</h2>
+            <p>
+              Votre session actuelle est connectee avec le role{" "}
+              <strong>{accessDeniedRole}</strong>. Cette vue est disponible
+              uniquement pour admin et manager.
+            </p>
+            <button
+              className="agent-stats-refresh"
+              onClick={() => router.push("/login")}
+              type="button"
+            >
+              Changer de compte
+            </button>
+          </section>
+        ) : null}
+
+        {!accessDeniedRole ? (
         <section className="agent-stats-hero">
           <div>
             <p>Vue equipe</p>
@@ -390,7 +428,9 @@ export default function AgentStatisticsDashboard() {
             </div>
           </div>
         </section>
+        ) : null}
 
+        {!accessDeniedRole ? (
         <section className="agent-stats-summary-grid">
           {summaryCards.map((card) => (
             <article className="agent-stats-summary-card" key={card.label}>
@@ -400,7 +440,9 @@ export default function AgentStatisticsDashboard() {
             </article>
           ))}
         </section>
+        ) : null}
 
+        {!accessDeniedRole ? (
         <section className="agent-stats-charts">
           <article className="agent-stats-panel">
             <div className="agent-stats-panel-header">
@@ -452,7 +494,9 @@ export default function AgentStatisticsDashboard() {
             </div>
           </article>
         </section>
+        ) : null}
 
+        {!accessDeniedRole ? (
         <div className="agent-stats-table-card">
           <div className="agent-stats-table-header">
             <h2>Performance detaillee par agent</h2>
@@ -554,6 +598,7 @@ export default function AgentStatisticsDashboard() {
             </table>
           </div>
         </div>
+        ) : null}
       </section>
     </main>
   );
