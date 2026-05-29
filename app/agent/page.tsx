@@ -503,7 +503,8 @@ export default function AgentPage() {
       appointment_date: "",
       notes: lead.notes,
     });
-    setMessage("");
+    setMessageType("success");
+    setMessage("Complete les informations de conversion dans le panneau Lead vers dossier.");
   }
 
   async function convertLead(event: FormEvent<HTMLFormElement>) {
@@ -599,6 +600,36 @@ export default function AgentPage() {
           ? error.message
           : "Dossier status update failed.",
       );
+    } finally {
+      setActionLoading("");
+    }
+  }
+
+  async function downloadReport(path: string, filename: string) {
+    setMessage("");
+    setActionLoading(`export-${filename}`);
+
+    try {
+      const response = await fetch(path, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setMessageType("error");
+        setMessage(data.error ?? "Export failed.");
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+      setMessageType("success");
+      setMessage("Export genere avec succes.");
     } finally {
       setActionLoading("");
     }
@@ -897,6 +928,19 @@ export default function AgentPage() {
                 <p>Calcul automatique</p>
                 <h2>Mes commissions</h2>
               </div>
+              <button
+                className="agent-secondary-button"
+                disabled={actionLoading === "export-mes-commissions.csv"}
+                onClick={() =>
+                  downloadReport(
+                    "/api/reports/export/commissions",
+                    "mes-commissions.csv",
+                  )
+                }
+                type="button"
+              >
+                Export CSV
+              </button>
             </div>
             <div className="agent-table-wrap">
               <table>
@@ -956,6 +1000,19 @@ export default function AgentPage() {
                 <p>Workflow commercial</p>
                 <h2>Mes dossiers</h2>
               </div>
+              <button
+                className="agent-secondary-button"
+                disabled={actionLoading === "export-mes-dossiers.csv"}
+                onClick={() =>
+                  downloadReport(
+                    "/api/reports/export/dossiers",
+                    "mes-dossiers.csv",
+                  )
+                }
+                type="button"
+              >
+                Export CSV
+              </button>
             </div>
             <div className="agent-table-wrap">
               <table>

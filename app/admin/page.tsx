@@ -279,6 +279,7 @@ export default function AdminPage() {
   const router = useRouter();
   const [token, setToken] = useState("");
   const [activeTab, setActiveTab] = useState<
+    | "dashboard"
     | "users"
     | "departments"
     | "sales"
@@ -286,7 +287,7 @@ export default function AdminPage() {
     | "dossiers"
     | "commissionRules"
     | "commissions"
-  >("users");
+  >("dashboard");
   const [users, setUsers] = useState<User[]>([]);
   const [ventes, setVentes] = useState<NombreVente[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -321,6 +322,114 @@ export default function AdminPage() {
   const agents = users.filter((user) => user.role === "agent");
   const agentCount = agents.length;
   const isBusy = loading || Boolean(actionLoading);
+  const activeTabTitle = {
+    dashboard: "Dashboard",
+    users: "Gestion des agents",
+    leads: "Leads",
+    dossiers: "Dossiers",
+    commissionRules: "Grille commissions",
+    commissions: "Commissions",
+    departments: "Departments",
+    sales: "Ventes",
+  }[activeTab];
+  const dashboardKpi = dashboard?.kpi;
+  const leadConversionRate = dashboardKpi?.total_leads
+    ? Math.round((dashboardKpi.leads_converted / dashboardKpi.total_leads) * 100)
+    : 0;
+  const dossierSignatureRate = dashboardKpi?.total_dossiers
+    ? Math.round((dashboardKpi.dossiers_signed / dashboardKpi.total_dossiers) * 100)
+    : 0;
+  const commissionPaidRate = dashboardKpi?.commissions_amount
+    ? Math.round((dashboardKpi.paid_amount / dashboardKpi.commissions_amount) * 100)
+    : 0;
+  const dossierStatusRows = [
+    "NOUVEAU",
+    "QUALIFIE",
+    "RDV_PLANIFIE",
+    "DEVIS_ENVOYE",
+    "SIGNE_ACOMPTE_A_VALIDER",
+    "ACOMPTE_VALIDE",
+    "POSE_SOLDE_A_VALIDER",
+  ].map((status) => ({
+    label: status,
+    value: dossiers.filter((dossier) => dossier.status === status).length,
+  }));
+  const maxDossierStatusCount = Math.max(
+    1,
+    ...dossierStatusRows.map((row) => row.value),
+  );
+  const dashboardChartRows = [
+    {
+      label: "Conversion leads",
+      value: leadConversionRate,
+      detail: `${dashboardKpi?.leads_converted ?? 0}/${dashboardKpi?.total_leads ?? leads.length}`,
+    },
+    {
+      label: "Dossiers signes",
+      value: dossierSignatureRate,
+      detail: `${dashboardKpi?.dossiers_signed ?? 0}/${dashboardKpi?.total_dossiers ?? dossiers.length}`,
+    },
+    {
+      label: "Commissions payees",
+      value: commissionPaidRate,
+      detail: `${dashboardKpi?.paid_amount ?? 0}/${dashboardKpi?.commissions_amount ?? 0} EUR`,
+    },
+  ];
+  const agentPerformanceRows = agents
+    .map((agent) => {
+      const agentLeads = leads.filter((lead) => lead.assigned_agent_id === agent.id);
+      const agentDossiers = dossiers.filter(
+        (dossier) => dossier.assigned_agent_id === agent.id,
+      );
+      const agentCommissions = commissions.filter(
+        (commission) => commission.agent_id === agent.id,
+      );
+      const commissionAmount = agentCommissions.reduce(
+        (total, commission) => total + commission.total_amount,
+        0,
+      );
+      const signedDossiers = agentDossiers.filter((dossier) =>
+        [
+          "SIGNE_ACOMPTE_A_VALIDER",
+          "ACOMPTE_VALIDE",
+          "DEPOT_MPR",
+          "POSE_SOLDE_A_VALIDER",
+          "SOLDE_VALIDE",
+          "ARCHIVE",
+        ].includes(dossier.status),
+      ).length;
+
+      return {
+        id: agent.id,
+        name: agent.name,
+        leads: agentLeads.length,
+        converted: agentLeads.filter((lead) => lead.status === "CONVERTI").length,
+        dossiers: agentDossiers.length,
+        signedDossiers,
+        commissionAmount,
+      };
+    })
+    .sort((firstAgent, secondAgent) => {
+      if (secondAgent.commissionAmount !== firstAgent.commissionAmount) {
+        return secondAgent.commissionAmount - firstAgent.commissionAmount;
+      }
+
+      return secondAgent.signedDossiers - firstAgent.signedDossiers;
+    })
+    .slice(0, 6);
+  const maxAgentCommissionAmount = Math.max(
+    1,
+    ...agentPerformanceRows.map((agent) => agent.commissionAmount),
+  );
+  const sourceRows = ["CALL", "REGIES"].map((source) => ({
+    label: source,
+    leads: leads.filter((lead) => lead.source === source).length,
+    dossiers: dossiers.filter((dossier) => dossier.source_type === source).length,
+  }));
+  const maxSourceCount = Math.max(
+    1,
+    ...sourceRows.flatMap((row) => [row.leads, row.dossiers]),
+  );
 
   async function loadData(authToken = token) {
     if (!authToken) {
@@ -912,6 +1021,36 @@ export default function AdminPage() {
     }
   }
 
+  async function downloadReport(path: string, filename: string) {
+    setMessage("");
+    setActionLoading(`export-${filename}`);
+
+    try {
+      const response = await fetch(path, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setMessageType("error");
+        setMessage(data.error ?? "Export failed.");
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+      setMessageType("success");
+      setMessage("Export genere avec succes.");
+    } finally {
+      setActionLoading("");
+    }
+  }
+
   return (
     <main className="admin-dashboard-v2">
       {isBusy ? (
@@ -942,6 +1081,14 @@ export default function AdminPage() {
         </div>
 
         <nav className="admin-v2-nav" aria-label="Admin navigation">
+          <button
+            className={activeTab === "dashboard" ? "active" : ""}
+            onClick={() => setActiveTab("dashboard")}
+            type="button"
+          >
+            <span className="admin-v2-nav-dot" />
+            Dashboard
+          </button>
           <button
             className={activeTab === "users" ? "active" : ""}
             onClick={() => setActiveTab("users")}
@@ -1009,7 +1156,7 @@ export default function AdminPage() {
         <header className="admin-v2-topbar">
           <div>
             <p>Console admin</p>
-          <h1>Gestion des agents</h1>
+            <h1>{activeTabTitle}</h1>
           </div>
           <div className="admin-v2-topbar-tools">
             <div className="admin-v2-search">
@@ -1034,71 +1181,218 @@ export default function AdminPage() {
           </div>
         </header>
 
-        <section className="admin-v2-hero">
-          <div>
-            <p>Operations dashboard</p>
-            <h2>Agents, departments et ventes centralises</h2>
-            <span>
-              Controle les agents, surveille les ventes et garde les structures
-              d'equipes propres depuis une seule interface.
-            </span>
-          </div>
-          <div className="admin-v2-hero-panel">
-            <span>System status</span>
-            <strong>Operational</strong>
-          </div>
-        </section>
-
-        <section className="admin-v2-metrics">
-          <div>
-            <span>Agents</span>
-            <strong>{agentCount}</strong>
-            <small>{agentCount} agents actifs</small>
-          </div>
-          <div>
-            <span>Departments</span>
-            <strong>{departments.length}</strong>
-            <small>Structure organisation</small>
-          </div>
-          <div>
-            <span>Total ventes</span>
-            <strong>{totalVentes}</strong>
-            <small>{ventes.length} factures suivies</small>
-          </div>
-          <div>
-            <span>Leads</span>
-            <strong>{dashboard?.kpi.total_leads ?? leads.length}</strong>
-            <small>{dashboard?.kpi.leads_converted ?? 0} convertis</small>
-          </div>
-          <div>
-            <span>Dossiers</span>
-            <strong>{dashboard?.kpi.total_dossiers ?? dossiers.length}</strong>
-            <small>{dashboard?.kpi.dossiers_signed ?? 0} signes</small>
-          </div>
-          <div>
-            <span>Regles commission</span>
-            <strong>{commissionRules.length}</strong>
-            <small>Grille tarifaire active/archivee</small>
-          </div>
-          <div>
-            <span>Commissions</span>
-            <strong>{dashboard?.kpi.commissions_amount ?? 0}</strong>
-            <small>{dashboard?.kpi.total_commissions ?? commissions.length} calculees</small>
-          </div>
-          <div>
-            <span>En attente</span>
-            <strong>{dashboard?.kpi.pending_deposit_amount ?? 0}</strong>
-            <small>Acomptes a valider</small>
-          </div>
-          <div>
-            <span>Dossiers +30j</span>
-            <strong>{dashboard?.kpi.dossiers_pending_over_30_days ?? 0}</strong>
-            <small>Sans cloture recente</small>
-          </div>
-        </section>
-
         {message ? (
           <p className={`admin-v2-message ${messageType}`}>{message}</p>
+        ) : null}
+
+        {activeTab === "dashboard" ? (
+          <>
+            <section className="admin-v2-hero">
+              <div>
+                <p>Operations dashboard</p>
+                <h2>Vue globale CRM, performance et commissions</h2>
+                <span>
+                  Les KPIs admin sont centralises ici pour garder les autres
+                  modules concentres sur leurs actions metier.
+                </span>
+              </div>
+              <div className="admin-v2-hero-panel">
+                <span>System status</span>
+                <strong>Operational</strong>
+              </div>
+            </section>
+
+            <section className="admin-v2-metrics">
+              <div>
+                <span>Agents</span>
+                <strong>{agentCount}</strong>
+                <small>{agentCount} agents actifs</small>
+              </div>
+              <div>
+                <span>Departments</span>
+                <strong>{departments.length}</strong>
+                <small>Structure organisation</small>
+              </div>
+              <div>
+                <span>Total ventes</span>
+                <strong>{totalVentes}</strong>
+                <small>{ventes.length} factures suivies</small>
+              </div>
+              <div>
+                <span>Leads</span>
+                <strong>{dashboardKpi?.total_leads ?? leads.length}</strong>
+                <small>{dashboardKpi?.leads_converted ?? 0} convertis</small>
+              </div>
+              <div>
+                <span>Dossiers</span>
+                <strong>{dashboardKpi?.total_dossiers ?? dossiers.length}</strong>
+                <small>{dashboardKpi?.dossiers_signed ?? 0} signes</small>
+              </div>
+              <div>
+                <span>Regles commission</span>
+                <strong>{commissionRules.length}</strong>
+                <small>Grille tarifaire active/archivee</small>
+              </div>
+              <div>
+                <span>Commissions</span>
+                <strong>{dashboardKpi?.commissions_amount ?? 0}</strong>
+                <small>
+                  {dashboardKpi?.total_commissions ?? commissions.length} calculees
+                </small>
+              </div>
+              <div>
+                <span>En attente</span>
+                <strong>{dashboardKpi?.pending_deposit_amount ?? 0}</strong>
+                <small>Acomptes a valider</small>
+              </div>
+              <div>
+                <span>Dossiers +30j</span>
+                <strong>{dashboardKpi?.dossiers_pending_over_30_days ?? 0}</strong>
+                <small>Sans cloture recente</small>
+              </div>
+            </section>
+
+            <section className="admin-v2-dashboard-grid">
+              <section className="admin-v2-card admin-v2-chart-card">
+                <div className="admin-v2-card-header">
+                  <div>
+                    <p>Performance</p>
+                    <h2>Taux principaux</h2>
+                  </div>
+                </div>
+                <div className="admin-v2-bar-list">
+                  {dashboardChartRows.map((row) => (
+                    <div className="admin-v2-bar-row" key={row.label}>
+                      <div>
+                        <strong>{row.label}</strong>
+                        <span>{row.detail}</span>
+                      </div>
+                      <div className="admin-v2-bar-track">
+                        <span style={{ width: `${Math.min(row.value, 100)}%` }} />
+                      </div>
+                      <b>{row.value}%</b>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="admin-v2-card admin-v2-chart-card">
+                <div className="admin-v2-card-header">
+                  <div>
+                    <p>Pipeline</p>
+                    <h2>Dossiers par statut</h2>
+                  </div>
+                </div>
+                <div className="admin-v2-status-chart">
+                  {dossierStatusRows.map((row) => (
+                    <div className="admin-v2-status-row" key={row.label}>
+                      <span>{row.label}</span>
+                      <div>
+                        <i
+                          style={{
+                            width: `${Math.max(
+                              4,
+                              (row.value / maxDossierStatusCount) * 100,
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                      <strong>{row.value}</strong>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="admin-v2-card admin-v2-chart-card">
+                <div className="admin-v2-card-header">
+                  <div>
+                    <p>Agents</p>
+                    <h2>Top performance</h2>
+                  </div>
+                  <button
+                    className="admin-v2-secondary"
+                    onClick={() => router.push("/statistiques-agents")}
+                    type="button"
+                  >
+                    Detail agents
+                  </button>
+                </div>
+                <div className="admin-v2-bar-list">
+                  {agentPerformanceRows.length ? (
+                    agentPerformanceRows.map((agent) => (
+                      <div className="admin-v2-bar-row" key={agent.id}>
+                        <div>
+                          <strong>{agent.name}</strong>
+                          <span>
+                            {agent.leads} leads · {agent.signedDossiers} signes
+                          </span>
+                        </div>
+                        <div className="admin-v2-bar-track">
+                          <span
+                            style={{
+                              width: `${Math.max(
+                                4,
+                                (agent.commissionAmount /
+                                  maxAgentCommissionAmount) *
+                                  100,
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                        <b>{agent.commissionAmount} EUR</b>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="muted-line">Aucune performance agent.</p>
+                  )}
+                </div>
+              </section>
+
+              <section className="admin-v2-card admin-v2-chart-card">
+                <div className="admin-v2-card-header">
+                  <div>
+                    <p>Acquisition</p>
+                    <h2>CALL vs REGIES</h2>
+                  </div>
+                </div>
+                <div className="admin-v2-source-chart">
+                  {sourceRows.map((row) => (
+                    <div key={row.label}>
+                      <strong>{row.label}</strong>
+                      <span>
+                        <i
+                          style={{
+                            height: `${Math.max(
+                              8,
+                              (row.leads / maxSourceCount) * 100,
+                            )}%`,
+                          }}
+                        />
+                        <b>
+                          Leads
+                          <small>{row.leads}</small>
+                        </b>
+                      </span>
+                      <span>
+                        <i
+                          style={{
+                            height: `${Math.max(
+                              8,
+                              (row.dossiers / maxSourceCount) * 100,
+                            )}%`,
+                          }}
+                        />
+                        <b>
+                          Dossiers
+                          <small>{row.dossiers}</small>
+                        </b>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </section>
+          </>
         ) : null}
 
         {activeTab === "users" ? (
@@ -1877,6 +2171,16 @@ export default function AdminPage() {
                 <p>Workflow commercial</p>
                 <h2>Dossiers</h2>
               </div>
+              <button
+                className="admin-v2-secondary"
+                disabled={actionLoading === "export-dossiers.csv"}
+                onClick={() =>
+                  downloadReport("/api/reports/export/dossiers", "dossiers.csv")
+                }
+                type="button"
+              >
+                Export CSV
+              </button>
             </div>
             <div className="admin-v2-table-wrap">
               <table>
@@ -2259,6 +2563,19 @@ export default function AdminPage() {
                 <p>Calcul automatique</p>
                 <h2>Commissions</h2>
               </div>
+              <button
+                className="admin-v2-secondary"
+                disabled={actionLoading === "export-commissions.csv"}
+                onClick={() =>
+                  downloadReport(
+                    "/api/reports/export/commissions",
+                    "commissions.csv",
+                  )
+                }
+                type="button"
+              >
+                Export CSV
+              </button>
             </div>
             <div className="admin-v2-table-wrap">
               <table>

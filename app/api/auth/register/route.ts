@@ -1,3 +1,3 @@
-import { register } from "@/domains/auth/auth.controller";
+import { createUser } from "@/domains/users/user.controller";
 
-export { register as POST };
+export { createUser as POST };

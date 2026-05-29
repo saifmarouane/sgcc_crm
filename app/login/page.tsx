@@ -16,6 +16,7 @@ export default function LoginPage() {
   useEffect(() => {
     router.prefetch("/admin");
     router.prefetch("/agent");
+    router.prefetch("/manager");
   }, [router]);
 
   async function login(event: FormEvent<HTMLFormElement>) {
@@ -50,6 +51,11 @@ export default function LoginPage() {
 
       if (data.user.role === "agent") {
         router.replace("/agent");
+        return;
+      }
+
+      if (data.user.role === "manager") {
+        router.replace("/manager");
         return;
       }
 

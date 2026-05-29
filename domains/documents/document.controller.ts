@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { handleHttpError } from "@/domains/shared/http";
+import { requireRole } from "@/domains/shared/auth";
 import { DocumentService } from "./document.service";
 
 const documentService = new DocumentService();
@@ -10,6 +11,7 @@ type RouteContext = {
 
 export async function createDocument(request: NextRequest) {
   try {
+    requireRole(request, "admin");
     const body = await request.json();
     const document = await documentService.create(body);
     return NextResponse.json({ document }, { status: 201 });
@@ -18,8 +20,9 @@ export async function createDocument(request: NextRequest) {
   }
 }
 
-export async function listDocuments() {
+export async function listDocuments(request: NextRequest) {
   try {
+    requireRole(request, "admin");
     const documents = await documentService.list();
     return NextResponse.json({ documents });
   } catch (error) {
@@ -29,6 +32,7 @@ export async function listDocuments() {
 
 export async function getDocument(_request: NextRequest, context: RouteContext) {
   try {
+    requireRole(_request, "admin");
     const { id } = await context.params;
     const document = await documentService.getById(id);
     return NextResponse.json({ document });
@@ -42,6 +46,7 @@ export async function updateDocument(
   context: RouteContext,
 ) {
   try {
+    requireRole(request, "admin");
     const { id } = await context.params;
     const body = await request.json();
     const document = await documentService.update(id, body);
@@ -56,6 +61,7 @@ export async function deleteDocument(
   context: RouteContext,
 ) {
   try {
+    requireRole(_request, "admin");
     const { id } = await context.params;
     await documentService.delete(id);
     return new NextResponse(null, { status: 204 });
