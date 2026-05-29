@@ -118,6 +118,7 @@ export default function AgentStatisticsDashboard() {
   const [query, setQuery] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showFullscreenGuide, setShowFullscreenGuide] = useState(true);
 
   const loadStatistics = useCallback(
     async (authToken = token) => {
@@ -189,6 +190,8 @@ export default function AgentStatisticsDashboard() {
   }, []);
 
   async function toggleFullscreen() {
+    setShowFullscreenGuide(false);
+
     if (document.fullscreenElement) {
       await document.exitFullscreen();
       return;
@@ -312,25 +315,32 @@ export default function AgentStatisticsDashboard() {
               </option>
             ))}
           </select>
-          <button
-            aria-label={
-              isFullscreen ? "Quitter le plein ecran" : "Afficher en plein ecran"
-            }
-            className="agent-stats-fullscreen"
-            onClick={toggleFullscreen}
-            title={
-              isFullscreen ? "Quitter le plein ecran" : "Afficher en plein ecran"
-            }
-            type="button"
+          <div
+            className={`agent-stats-fullscreen-guide ${
+              showFullscreenGuide && !isFullscreen ? "is-visible" : ""
+            }`}
           >
-            <span
-              className={
-                isFullscreen
-                  ? "agent-stats-fullscreen-icon exit"
-                  : "agent-stats-fullscreen-icon"
+            <span>Vue grand ecran</span>
+            <button
+              aria-label={
+                isFullscreen ? "Quitter le plein ecran" : "Afficher en plein ecran"
               }
-            />
-          </button>
+              className="agent-stats-fullscreen"
+              onClick={toggleFullscreen}
+              title={
+                isFullscreen ? "Quitter le plein ecran" : "Afficher en plein ecran"
+              }
+              type="button"
+            >
+              <span
+                className={
+                  isFullscreen
+                    ? "agent-stats-fullscreen-icon exit"
+                    : "agent-stats-fullscreen-icon"
+                }
+              />
+            </button>
+          </div>
           <button
             className="agent-stats-refresh"
             disabled={loading}

@@ -2470,6 +2470,7 @@ td span {
 }
 
 .agent-stats-fullscreen {
+  position: relative;
   width: 40px;
   height: 40px;
   display: grid;
@@ -2483,6 +2484,63 @@ td span {
 .agent-stats-fullscreen:hover {
   border-color: var(--color-primary);
   box-shadow: 0 10px 24px rgba(37, 99, 235, 0.14);
+}
+
+.agent-stats-fullscreen-guide {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-stats-fullscreen-guide > span {
+  position: absolute;
+  right: 48px;
+  z-index: 2;
+  width: max-content;
+  max-width: 180px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: #0f172a;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.22);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(8px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.agent-stats-fullscreen-guide > span::after {
+  position: absolute;
+  top: 50%;
+  right: -6px;
+  width: 12px;
+  height: 12px;
+  content: "";
+  background: #0f172a;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.agent-stats-fullscreen-guide.is-visible > span {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.agent-stats-fullscreen-guide.is-visible .agent-stats-fullscreen {
+  border-color: var(--color-primary);
+  animation: agent-stats-fullscreen-pulse 1.7s ease-in-out infinite;
+}
+
+.agent-stats-fullscreen-guide.is-visible .agent-stats-fullscreen::after {
+  position: absolute;
+  inset: -6px;
+  content: "";
+  border: 2px solid rgba(37, 99, 235, 0.24);
+  border-radius: 14px;
 }
 
 .agent-stats-fullscreen-icon {
@@ -2533,6 +2591,19 @@ td span {
 
 .agent-stats-fullscreen-icon.exit {
   transform: rotate(180deg);
+}
+
+@keyframes agent-stats-fullscreen-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.28);
+    transform: translateY(0);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0);
+    transform: translateY(-1px);
+  }
 }
 
 .agent-stats-search {
