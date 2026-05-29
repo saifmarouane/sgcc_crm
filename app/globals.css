@@ -4149,3 +4149,325 @@ body {
     margin: -18px -18px 18px;
   }
 }
+
+/* Responsive repair layer for data-heavy admin, manager, agent and stats views. */
+.admin-v2-main,
+.manager-main,
+.agent-main,
+.agent-stats-main,
+.admin-v2-card,
+.manager-card,
+.agent-card,
+.agent-stats-panel,
+.agent-stats-table-card,
+.agent-stats-hero {
+  min-width: 0;
+}
+
+.admin-v2-topbar,
+.manager-topbar,
+.agent-topbar,
+.agent-stats-header,
+.admin-v2-card-header,
+.manager-card-header,
+.agent-card-header,
+.agent-stats-panel-header,
+.agent-stats-table-header {
+  min-width: 0;
+}
+
+.admin-v2-topbar-tools,
+.agent-stats-actions,
+.admin-v2-row-actions,
+.row-actions {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.admin-v2-search,
+.agent-stats-search-input,
+.agent-stats-filter {
+  min-width: 0;
+}
+
+.admin-v2-table-wrap,
+.manager-table-wrap,
+.agent-table-wrap,
+.agent-stats-table-wrap,
+.admin-v2-chart-card,
+.agent-stats-panel {
+  max-width: 100%;
+}
+
+.admin-v2-table-wrap,
+.manager-table-wrap,
+.agent-table-wrap,
+.agent-stats-table-wrap {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.admin-v2-table-wrap table,
+.manager-table-wrap table,
+.agent-table-wrap table,
+.agent-stats-table-wrap table {
+  min-width: 760px;
+}
+
+.admin-v2-table-wrap th,
+.admin-v2-table-wrap td,
+.manager-table-wrap th,
+.manager-table-wrap td,
+.agent-table-wrap th,
+.agent-table-wrap td,
+.agent-stats-table-wrap th,
+.agent-stats-table-wrap td {
+  white-space: nowrap;
+}
+
+.admin-v2-table-wrap td strong,
+.admin-v2-table-wrap td span,
+.admin-v2-table-wrap td small,
+.manager-table-wrap td,
+.agent-table-wrap td strong,
+.agent-table-wrap td span,
+.agent-table-wrap td small,
+.agent-stats-agent-cell strong,
+.agent-stats-agent-cell small {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.admin-v2-bar-row,
+.admin-v2-status-row,
+.agent-stats-bar-row {
+  min-width: 0;
+}
+
+.admin-v2-bar-row > *,
+.admin-v2-status-row > *,
+.agent-stats-bar-row > * {
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .admin-v2-form-card {
+    position: static;
+  }
+
+  .admin-v2-hero,
+  .agent-stats-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-stats-charts,
+  .admin-v2-dashboard-grid,
+  .admin-v2-content-grid,
+  .manager-grid,
+  .agent-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  .admin-v2-sidebar,
+  .manager-sidebar,
+  .agent-sidebar {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .admin-v2-nav,
+  .manager-nav,
+  .agent-nav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-v2-nav button,
+  .manager-nav button,
+  .agent-nav button {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: max-content;
+    transform: none;
+  }
+
+  .admin-v2-nav button:hover,
+  .manager-nav button:hover,
+  .agent-nav button:hover {
+    transform: none;
+  }
+
+  .admin-v2-topbar,
+  .manager-topbar,
+  .agent-topbar,
+  .agent-stats-header,
+  .admin-v2-card-header,
+  .manager-card-header,
+  .agent-card-header,
+  .agent-stats-panel-header,
+  .agent-stats-table-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-v2-topbar-tools,
+  .agent-stats-actions {
+    width: 100%;
+  }
+
+  .admin-v2-search,
+  .agent-stats-search-input,
+  .agent-stats-filter,
+  .admin-v2-refresh,
+  .manager-topbar button,
+  .agent-refresh,
+  .agent-stats-refresh {
+    width: 100%;
+  }
+
+  .admin-v2-metrics,
+  .manager-metrics,
+  .agent-metrics,
+  .agent-stats-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-v2-source-chart {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-stats-radials {
+    grid-template-columns: repeat(3, minmax(92px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .agent-stats-combo-chart {
+    grid-template-columns: repeat(6, minmax(68px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-v2-main,
+  .manager-main,
+  .agent-main,
+  .agent-stats-main {
+    padding: 12px;
+  }
+
+  .admin-v2-topbar,
+  .manager-topbar,
+  .agent-topbar {
+    margin: -12px -12px 14px;
+    padding: 12px;
+  }
+
+  .agent-stats-header {
+    margin: 0;
+    padding: 12px;
+  }
+
+  .admin-v2-topbar h1,
+  .manager-topbar h1,
+  .agent-topbar h1,
+  .agent-stats-header h1 {
+    font-size: 20px;
+    line-height: 1.2;
+  }
+
+  .admin-v2-card,
+  .manager-card,
+  .agent-card,
+  .agent-stats-panel,
+  .agent-stats-hero,
+  .agent-stats-table-card {
+    padding: 14px;
+  }
+
+  .agent-stats-table-card {
+    padding: 0;
+  }
+
+  .admin-v2-metrics,
+  .manager-metrics,
+  .agent-metrics,
+  .agent-stats-summary-grid,
+  .admin-v2-form-grid,
+  .manager-form-grid,
+  .agent-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-v2-hero h2,
+  .agent-stats-hero h2 {
+    font-size: 22px;
+    line-height: 1.25;
+  }
+
+  .admin-v2-bar-row,
+  .admin-v2-status-row,
+  .agent-stats-bar-row {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .admin-v2-bar-row b,
+  .admin-v2-status-row strong,
+  .agent-stats-bar-row strong {
+    text-align: left;
+  }
+
+  .admin-v2-source-chart > div {
+    height: 190px;
+  }
+
+  .admin-v2-source-chart span {
+    height: 140px;
+  }
+
+  .agent-stats-radials div {
+    min-height: 92px;
+  }
+
+  .agent-stats-radials strong,
+  .agent-stats-summary-card strong,
+  .admin-v2-metrics strong,
+  .manager-metrics strong,
+  .agent-metrics strong {
+    font-size: 22px;
+  }
+
+  .agent-stats-table-header {
+    padding: 14px;
+  }
+
+  .admin-v2-table-wrap table,
+  .manager-table-wrap table,
+  .agent-table-wrap table,
+  .agent-stats-table-wrap table {
+    min-width: 680px;
+  }
+
+  .profile-row,
+  .profile-grid,
+  .admin-v2-profile-row,
+  .admin-v2-profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
