@@ -131,6 +131,24 @@ type Commission = {
   calculated_at: string;
 };
 
+type DashboardPayload = {
+  scope: "agent" | "team" | "global";
+  kpi: {
+    total_leads: number;
+    leads_qualified: number;
+    leads_converted: number;
+    total_dossiers: number;
+    dossiers_signed: number;
+    dossiers_installed: number;
+    dossiers_pending_over_30_days: number;
+    total_commissions: number;
+    commissions_amount: number;
+    pending_deposit_amount: number;
+    pending_balance_amount: number;
+    paid_amount: number;
+  };
+};
+
 type AgentView = "profile" | "sales" | "leads" | "dossiers" | "commissions";
 
 const emptyLeadForm: LeadForm = {
@@ -193,6 +211,7 @@ export default function AgentPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [dossiers, setDossiers] = useState<Dossier[]>([]);
   const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
   const [leadForm, setLeadForm] = useState<LeadForm>(emptyLeadForm);
   const [convertLeadForm, setConvertLeadForm] =
     useState<ConvertLeadForm>(emptyConvertLeadForm);
@@ -255,6 +274,7 @@ export default function AgentPage() {
         leadsResponse,
         dossiersResponse,
         commissionsResponse,
+        dashboardResponse,
       ] =
         await Promise.all([
           fetch("/api/auth/me", { headers: authHeaders }),
@@ -263,6 +283,7 @@ export default function AgentPage() {
           fetch("/api/leads", { headers: authHeaders }),
           fetch("/api/dossiers", { headers: authHeaders }),
           fetch("/api/commissions", { headers: authHeaders }),
+          fetch("/api/dashboard", { headers: authHeaders }),
         ]);
 
       const mePayload = await meResponse.json().catch(() => ({}));
@@ -273,6 +294,7 @@ export default function AgentPage() {
       const leadsPayload = await leadsResponse.json().catch(() => ({}));
       const dossiersPayload = await dossiersResponse.json().catch(() => ({}));
       const commissionsPayload = await commissionsResponse.json().catch(() => ({}));
+      const dashboardPayload = await dashboardResponse.json().catch(() => ({}));
 
       if (!meResponse.ok || mePayload.user?.role !== "agent") {
         localStorage.removeItem("sgcc_token");
@@ -304,6 +326,10 @@ export default function AgentPage() {
         );
       }
 
+      if (!dashboardResponse.ok) {
+        throw new Error(dashboardPayload.error ?? "Failed to load dashboard.");
+      }
+
       setUser(mePayload.user);
       setProfile(toProfileForm(mePayload.user));
       setDepartments(departmentsPayload.departments ?? []);
@@ -311,6 +337,7 @@ export default function AgentPage() {
       setLeads(leadsPayload.leads ?? []);
       setDossiers(dossiersPayload.dossiers ?? []);
       setCommissions(commissionsPayload.commissions ?? []);
+      setDashboard(dashboardPayload.dashboard ?? null);
     } catch (error) {
       setMessageType("error");
       setMessage(error instanceof Error ? error.message : "Load failed.");
@@ -843,20 +870,23 @@ export default function AgentPage() {
           </div>
           <div>
             <span>Leads</span>
-            <strong>{leads.length}</strong>
+            <strong>{dashboard?.kpi.total_leads ?? leads.length}</strong>
           </div>
           <div>
             <span>Dossiers</span>
-            <strong>{dossiers.length}</strong>
+            <strong>{dashboard?.kpi.total_dossiers ?? dossiers.length}</strong>
           </div>
           <div>
             <span>Commissions</span>
-            <strong>
-              {commissions.reduce(
-                (total, commission) => total + commission.total_amount,
-                0,
-              )}
-            </strong>
+            <strong>{dashboard?.kpi.commissions_amount ?? 0}</strong>
+          </div>
+          <div>
+            <span>Signes</span>
+            <strong>{dashboard?.kpi.dossiers_signed ?? 0}</strong>
+          </div>
+          <div>
+            <span>Acompte attente</span>
+            <strong>{dashboard?.kpi.pending_deposit_amount ?? 0}</strong>
           </div>
         </section>
 

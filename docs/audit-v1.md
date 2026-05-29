@@ -14,7 +14,7 @@ Stack identifiee:
 - Hash des mots de passe avec `bcryptjs`.
 - Stockage fichiers local dans `public/uploads`.
 - Pas de framework de tests applicatifs configure.
-- Script de verification Node.js: Node 22 ou 23 obligatoire.
+- Script de verification Node.js: Node 22, 23 ou 24 obligatoire.
 
 Structure backend:
 

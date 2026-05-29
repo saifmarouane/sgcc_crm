@@ -171,6 +171,24 @@ type Commission = {
   validated_by_id: string;
 };
 
+type DashboardPayload = {
+  scope: "agent" | "team" | "global";
+  kpi: {
+    total_leads: number;
+    leads_qualified: number;
+    leads_converted: number;
+    total_dossiers: number;
+    dossiers_signed: number;
+    dossiers_installed: number;
+    dossiers_pending_over_30_days: number;
+    total_commissions: number;
+    commissions_amount: number;
+    pending_deposit_amount: number;
+    pending_balance_amount: number;
+    paid_amount: number;
+  };
+};
+
 const emptyUserForm: UserForm = {
   name: "",
   email: "",
@@ -275,6 +293,7 @@ export default function AdminPage() {
   const [dossiers, setDossiers] = useState<Dossier[]>([]);
   const [commissionRules, setCommissionRules] = useState<CommissionRule[]>([]);
   const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [departmentName, setDepartmentName] = useState("");
   const [userForm, setUserForm] = useState<UserForm>(emptyUserForm);
@@ -321,6 +340,7 @@ export default function AdminPage() {
         dossiersResponse,
         commissionRulesResponse,
         commissionsResponse,
+        dashboardResponse,
       ] = await Promise.all([
         fetch("/api/users", { headers: authHeaders }),
         fetch("/api/nombre-ventes", { headers: authHeaders }),
@@ -329,6 +349,7 @@ export default function AdminPage() {
         fetch("/api/dossiers", { headers: authHeaders }),
         fetch("/api/commission-rules", { headers: authHeaders }),
         fetch("/api/commissions", { headers: authHeaders }),
+        fetch("/api/dashboard", { headers: authHeaders }),
       ]);
 
       const usersPayload = await usersResponse.json();
@@ -338,6 +359,7 @@ export default function AdminPage() {
       const dossiersPayload = await dossiersResponse.json();
       const commissionRulesPayload = await commissionRulesResponse.json();
       const commissionsPayload = await commissionsResponse.json();
+      const dashboardPayload = await dashboardResponse.json();
 
       if (!usersResponse.ok) {
         throw new Error(usersPayload.error ?? "Failed to load users.");
@@ -373,6 +395,10 @@ export default function AdminPage() {
         );
       }
 
+      if (!dashboardResponse.ok) {
+        throw new Error(dashboardPayload.error ?? "Failed to load dashboard.");
+      }
+
       setUsers(usersPayload.users ?? []);
       setVentes(ventesPayload.nombre_ventes ?? []);
       setDepartments(departmentsPayload.departments ?? []);
@@ -380,6 +406,7 @@ export default function AdminPage() {
       setDossiers(dossiersPayload.dossiers ?? []);
       setCommissionRules(commissionRulesPayload.commission_rules ?? []);
       setCommissions(commissionsPayload.commissions ?? []);
+      setDashboard(dashboardPayload.dashboard ?? null);
     } catch (error) {
       setMessageType("error");
       setMessage(error instanceof Error ? error.message : "Load failed.");
@@ -856,6 +883,35 @@ export default function AdminPage() {
     }
   }
 
+  async function runCommissionAction(id: string, action: string) {
+    setMessage("");
+    setActionLoading(`commission-${action}-${id}`);
+
+    try {
+      const response = await fetch(`/api/commissions/${id}/${action}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setMessageType("error");
+        setMessage(data.error ?? "Commission update failed.");
+        return;
+      }
+
+      setCommissions((currentCommissions) =>
+        currentCommissions.map((commission) =>
+          commission.id === id ? data.commission : commission,
+        ),
+      );
+      setMessageType("success");
+      setMessage("Commission mise a jour.");
+    } finally {
+      setActionLoading("");
+    }
+  }
+
   return (
     <main className="admin-dashboard-v2">
       {isBusy ? (
@@ -1011,13 +1067,13 @@ export default function AdminPage() {
           </div>
           <div>
             <span>Leads</span>
-            <strong>{leads.length}</strong>
-            <small>Prospects V2 enregistres</small>
+            <strong>{dashboard?.kpi.total_leads ?? leads.length}</strong>
+            <small>{dashboard?.kpi.leads_converted ?? 0} convertis</small>
           </div>
           <div>
             <span>Dossiers</span>
-            <strong>{dossiers.length}</strong>
-            <small>Dossiers clients V2</small>
+            <strong>{dashboard?.kpi.total_dossiers ?? dossiers.length}</strong>
+            <small>{dashboard?.kpi.dossiers_signed ?? 0} signes</small>
           </div>
           <div>
             <span>Regles commission</span>
@@ -1026,13 +1082,18 @@ export default function AdminPage() {
           </div>
           <div>
             <span>Commissions</span>
-            <strong>
-              {commissions.reduce(
-                (total, commission) => total + commission.total_amount,
-                0,
-              )}
-            </strong>
-            <small>{commissions.length} commissions calculees</small>
+            <strong>{dashboard?.kpi.commissions_amount ?? 0}</strong>
+            <small>{dashboard?.kpi.total_commissions ?? commissions.length} calculees</small>
+          </div>
+          <div>
+            <span>En attente</span>
+            <strong>{dashboard?.kpi.pending_deposit_amount ?? 0}</strong>
+            <small>Acomptes a valider</small>
+          </div>
+          <div>
+            <span>Dossiers +30j</span>
+            <strong>{dashboard?.kpi.dossiers_pending_over_30_days ?? 0}</strong>
+            <small>Sans cloture recente</small>
           </div>
         </section>
 
@@ -2210,12 +2271,13 @@ export default function AdminPage() {
                     <th>Solde</th>
                     <th>Statut</th>
                     <th>Calcul</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={7}>Loading...</td>
+                      <td colSpan={8}>Loading...</td>
                     </tr>
                   ) : commissions.length ? (
                     commissions.map((commission) => {
@@ -2246,12 +2308,87 @@ export default function AdminPage() {
                               commission.calculated_at,
                             ).toLocaleString()}
                           </td>
+                          <td>
+                            <div className="admin-v2-row-actions">
+                              {commission.deposit_status ===
+                              "ACOMPTE_EN_ATTENTE" ? (
+                                <button
+                                  disabled={
+                                    actionLoading ===
+                                    `commission-validate-deposit-${commission.id}`
+                                  }
+                                  onClick={() =>
+                                    runCommissionAction(
+                                      commission.id,
+                                      "validate-deposit",
+                                    )
+                                  }
+                                  type="button"
+                                >
+                                  Valider acompte
+                                </button>
+                              ) : null}
+                              {commission.deposit_status ===
+                              "ACOMPTE_VALIDE" ? (
+                                <button
+                                  disabled={
+                                    actionLoading ===
+                                    `commission-mark-deposit-paid-${commission.id}`
+                                  }
+                                  onClick={() =>
+                                    runCommissionAction(
+                                      commission.id,
+                                      "mark-deposit-paid",
+                                    )
+                                  }
+                                  type="button"
+                                >
+                                  Acompte paye
+                                </button>
+                              ) : null}
+                              {commission.balance_status ===
+                              "SOLDE_EN_ATTENTE" ? (
+                                <button
+                                  disabled={
+                                    actionLoading ===
+                                    `commission-validate-balance-${commission.id}`
+                                  }
+                                  onClick={() =>
+                                    runCommissionAction(
+                                      commission.id,
+                                      "validate-balance",
+                                    )
+                                  }
+                                  type="button"
+                                >
+                                  Valider solde
+                                </button>
+                              ) : null}
+                              {commission.balance_status === "SOLDE_VALIDE" ? (
+                                <button
+                                  disabled={
+                                    actionLoading ===
+                                    `commission-mark-balance-paid-${commission.id}`
+                                  }
+                                  onClick={() =>
+                                    runCommissionAction(
+                                      commission.id,
+                                      "mark-balance-paid",
+                                    )
+                                  }
+                                  type="button"
+                                >
+                                  Solde paye
+                                </button>
+                              ) : null}
+                            </div>
+                          </td>
                         </tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan={7}>Aucune commission calculee.</td>
+                      <td colSpan={8}>Aucune commission calculee.</td>
                     </tr>
                   )}
                 </tbody>

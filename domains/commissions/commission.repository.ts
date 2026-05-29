@@ -64,5 +64,25 @@ export class CommissionRepository {
     const collection = await commissionsCollection();
     return collection.findOne({ _id: new ObjectId(id) });
   }
-}
 
+  async updateById(
+    id: string,
+    updates: Partial<Omit<CommissionDocument, "_id" | "createdAt">>,
+  ): Promise<CommissionDocument | null> {
+    if (!ObjectId.isValid(id)) {
+      return null;
+    }
+
+    const collection = await commissionsCollection();
+    return collection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          ...updates,
+          updatedAt: new Date(),
+        },
+      },
+      { returnDocument: "after" },
+    );
+  }
+}

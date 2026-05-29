@@ -158,6 +158,106 @@ export class CommissionService {
     return toPublicCommission(commission);
   }
 
+  async validateDeposit(
+    id: string,
+    actor: JwtUserPayload,
+  ): Promise<PublicCommission> {
+    this.requireSalesManager(actor);
+    const commission = await this.getCommissionOrFail(id);
+
+    if (commission.deposit_status !== COMMISSION_STATUS.ACOMPTE_EN_ATTENTE) {
+      throw new AppError("L'acompte n'est pas en attente de validation.", 400);
+    }
+
+    const updatedCommission = await this.updateCommissionOrFail(id, {
+      deposit_status: COMMISSION_STATUS.ACOMPTE_VALIDE,
+      global_status: COMMISSION_STATUS.ACOMPTE_VALIDE,
+      deposit_validated_at: new Date(),
+      validated_by_id: actor.sub,
+    });
+
+    await this.log(actor, "COMMISSION_DEPOSIT_VALIDATED", id, commission, updatedCommission);
+    return toPublicCommission(updatedCommission);
+  }
+
+  async validateBalance(
+    id: string,
+    actor: JwtUserPayload,
+  ): Promise<PublicCommission> {
+    this.requireSalesManager(actor);
+    const commission = await this.getCommissionOrFail(id);
+
+    if (commission.balance_status !== COMMISSION_STATUS.SOLDE_EN_ATTENTE) {
+      throw new AppError("Le solde n'est pas en attente de validation.", 400);
+    }
+
+    const dossier = await this.getDossierOrFail(commission.dossier_id);
+
+    if (dossier.status !== "POSE_SOLDE_A_VALIDER") {
+      throw new AppError("Le solde devient validable uniquement apres la pose.", 400);
+    }
+
+    const updatedCommission = await this.updateCommissionOrFail(id, {
+      balance_status: COMMISSION_STATUS.SOLDE_VALIDE,
+      global_status: COMMISSION_STATUS.SOLDE_VALIDE,
+      balance_validated_at: new Date(),
+      validated_by_id: actor.sub,
+    });
+
+    await this.log(actor, "COMMISSION_BALANCE_VALIDATED", id, commission, updatedCommission);
+    return toPublicCommission(updatedCommission);
+  }
+
+  async markDepositPaid(
+    id: string,
+    actor: JwtUserPayload,
+  ): Promise<PublicCommission> {
+    this.requireSalesManager(actor);
+    const commission = await this.getCommissionOrFail(id);
+
+    if (commission.deposit_status !== COMMISSION_STATUS.ACOMPTE_VALIDE) {
+      throw new AppError("L'acompte doit etre valide avant paiement.", 400);
+    }
+
+    const updatedCommission = await this.updateCommissionOrFail(id, {
+      deposit_status: COMMISSION_STATUS.ACOMPTE_PAYE,
+      global_status:
+        commission.balance_status === COMMISSION_STATUS.SOLDE_PAYE
+          ? COMMISSION_STATUS.SOLDEE
+          : COMMISSION_STATUS.ACOMPTE_PAYE,
+      deposit_paid_at: new Date(),
+      validated_by_id: actor.sub,
+    });
+
+    await this.log(actor, "COMMISSION_DEPOSIT_PAID", id, commission, updatedCommission);
+    return toPublicCommission(updatedCommission);
+  }
+
+  async markBalancePaid(
+    id: string,
+    actor: JwtUserPayload,
+  ): Promise<PublicCommission> {
+    this.requireSalesManager(actor);
+    const commission = await this.getCommissionOrFail(id);
+
+    if (commission.balance_status !== COMMISSION_STATUS.SOLDE_VALIDE) {
+      throw new AppError("Le solde doit etre valide avant paiement.", 400);
+    }
+
+    const updatedCommission = await this.updateCommissionOrFail(id, {
+      balance_status: COMMISSION_STATUS.SOLDE_PAYE,
+      global_status:
+        commission.deposit_status === COMMISSION_STATUS.ACOMPTE_PAYE
+          ? COMMISSION_STATUS.SOLDEE
+          : COMMISSION_STATUS.SOLDE_PAYE,
+      balance_paid_at: new Date(),
+      validated_by_id: actor.sub,
+    });
+
+    await this.log(actor, "COMMISSION_BALANCE_PAID", id, commission, updatedCommission);
+    return toPublicCommission(updatedCommission);
+  }
+
   private async getDossierOrFail(id: string): Promise<DossierDocument> {
     const dossier = await this.dossierRepository.findById(id);
 
@@ -166,6 +266,35 @@ export class CommissionService {
     }
 
     return dossier;
+  }
+
+  private async getCommissionOrFail(id: string): Promise<CommissionDocument> {
+    const commission = await this.repository.findById(id);
+
+    if (!commission) {
+      throw new AppError("Commission not found.", 404);
+    }
+
+    return commission;
+  }
+
+  private async updateCommissionOrFail(
+    id: string,
+    updates: Partial<Omit<CommissionDocument, "_id" | "createdAt">>,
+  ): Promise<CommissionDocument> {
+    const commission = await this.repository.updateById(id, updates);
+
+    if (!commission) {
+      throw new AppError("Commission not found.", 404);
+    }
+
+    return commission;
+  }
+
+  private requireSalesManager(actor: JwtUserPayload): void {
+    if (!isSalesManager(actor)) {
+      throw new AppError("Vous n'avez pas les droits necessaires.", 403);
+    }
   }
 
   private async ensureCanAccessAgent(
@@ -216,6 +345,23 @@ export class CommissionService {
       .map((user) => user.id);
 
     return { ...filter, agent_ids: teamAgentIds, agent_id: undefined };
+  }
+
+  private async log(
+    actor: JwtUserPayload,
+    action: string,
+    commissionId: string,
+    oldValue: unknown,
+    newValue: unknown,
+  ): Promise<void> {
+    await this.activityLogService.create({
+      user_id: actor.sub,
+      entity_type: "commission",
+      entity_id: commissionId,
+      action,
+      old_value: oldValue,
+      new_value: newValue,
+    });
   }
 }
 

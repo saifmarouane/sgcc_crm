@@ -52,3 +52,58 @@ export async function calculateDossierCommission(
   }
 }
 
+export async function validateCommissionDeposit(
+  request: NextRequest,
+  context: RouteContext,
+) {
+  try {
+    const actor = requireAuth(request);
+    const { id } = await context.params;
+    const commission = await commissionService.validateDeposit(id, actor);
+    return NextResponse.json({ commission });
+  } catch (error) {
+    return handleHttpError(error);
+  }
+}
+
+export async function validateCommissionBalance(
+  request: NextRequest,
+  context: RouteContext,
+) {
+  try {
+    const actor = requireAuth(request);
+    const { id } = await context.params;
+    const commission = await commissionService.validateBalance(id, actor);
+    return NextResponse.json({ commission });
+  } catch (error) {
+    return handleHttpError(error);
+  }
+}
+
+export async function markCommissionDepositPaid(
+  request: NextRequest,
+  context: RouteContext,
+) {
+  try {
+    const actor = requireAuth(request);
+    const { id } = await context.params;
+    const commission = await commissionService.markDepositPaid(id, actor);
+    return NextResponse.json({ commission });
+  } catch (error) {
+    return handleHttpError(error);
+  }
+}
+
+export async function markCommissionBalancePaid(
+  request: NextRequest,
+  context: RouteContext,
+) {
+  try {
+    const actor = requireAuth(request);
+    const { id } = await context.params;
+    const commission = await commissionService.markBalancePaid(id, actor);
+    return NextResponse.json({ commission });
+  } catch (error) {
+    return handleHttpError(error);
+  }
+}
