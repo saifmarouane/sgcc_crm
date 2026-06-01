@@ -8,7 +8,8 @@ import { AppError } from "@/domains/shared/app-error";
 export const runtime = "nodejs";
 
 const allowedTypes = new Set(["profile", "document"]);
-const maxUploadSizeBytes = 4 * 1024 * 1024;
+const maxProfileUploadSizeBytes = 4 * 1024 * 1024;
+const maxDocumentUploadSizeBytes = 20 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,8 +27,14 @@ export async function POST(request: NextRequest) {
       throw new AppError("type must be profile or document.", 400);
     }
 
+    const maxUploadSizeBytes =
+      type === "document" ? maxDocumentUploadSizeBytes : maxProfileUploadSizeBytes;
+
     if (file.size > maxUploadSizeBytes) {
-      throw new AppError("File size must be lower than 4MB.", 400);
+      throw new AppError(
+        `File size must be lower than ${maxUploadSizeBytes / 1024 / 1024}MB.`,
+        400,
+      );
     }
 
     const bytes = await file.arrayBuffer();

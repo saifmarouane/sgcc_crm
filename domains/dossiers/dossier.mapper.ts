@@ -19,8 +19,9 @@ export function toPublicDossier(dossier: DossierDocument): PublicDossier {
     mpr_deposit_date: dossier.mpr_deposit_date?.toISOString() ?? null,
     installation_date: dossier.installation_date?.toISOString() ?? null,
     notes: dossier.notes,
+    document_ids: dossier.document_ids ?? [],
+    document_files: dossier.document_files ?? [],
     createdAt: dossier.createdAt.toISOString(),
     updatedAt: dossier.updatedAt.toISOString(),
   };
 }
-

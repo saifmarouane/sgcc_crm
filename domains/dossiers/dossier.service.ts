@@ -2,6 +2,7 @@ import type { JwtUserPayload } from "@/domains/auth/auth.types";
 import { AuthService } from "@/domains/auth/auth.service";
 import { ActivityLogService } from "@/domains/activity-logs/activity-log.service";
 import { CommissionService } from "@/domains/commissions/commission.service";
+import { DocumentService } from "@/domains/documents/document.service";
 import { LeadRepository } from "@/domains/leads/lead.repository";
 import { toPublicLead } from "@/domains/leads/lead.mapper";
 import {
@@ -95,6 +96,7 @@ export class DossierService {
     private readonly authService = new AuthService(),
     private readonly activityLogService = new ActivityLogService(),
     private readonly commissionService = new CommissionService(),
+    private readonly documentService = new DocumentService(),
   ) {}
 
   async create(
@@ -227,6 +229,15 @@ export class DossierService {
     const sector = validateSector(input.sector || lead.sector);
     const color = validateColor(input.color);
     const surfaceRange = validateSurfaceRange(input.surface_range);
+    const documentFiles = validateDocumentFiles(input.document_files);
+    const documents = await Promise.all(
+      documentFiles.map((documentFile) =>
+        this.documentService.create({
+          user_id: lead.assigned_agent_id,
+          document_file: documentFile,
+        }),
+      ),
+    );
 
     const now = new Date();
     const dossier = await this.repository.create({
@@ -248,6 +259,8 @@ export class DossierService {
       mpr_deposit_date: null,
       installation_date: null,
       notes: input.notes?.trim() || lead.notes,
+      document_ids: documents.map((document) => document.id),
+      document_files: documents.map((document) => document.document_file),
       createdAt: now,
       updatedAt: now,
     });
@@ -386,6 +399,10 @@ function validateCreateDossierInput(
       "installation_date",
     ),
     notes: input.notes?.trim() ?? "",
+    document_ids: input.document_ids?.map((id) => id.trim()).filter(Boolean) ?? [],
+    document_files:
+      input.document_files?.map((documentFile) => documentFile.trim()).filter(Boolean) ??
+      [],
   };
 }
 
@@ -549,6 +566,22 @@ function validateStatus(status?: DossierStatus): DossierStatus {
   }
 
   return validStatus;
+}
+
+function validateDocumentFiles(documentFiles?: string[]): string[] {
+  if (!documentFiles) {
+    return [];
+  }
+
+  if (!Array.isArray(documentFiles)) {
+    throw new AppError("document_files must be an array.", 400);
+  }
+
+  return documentFiles
+    .map((documentFile) =>
+      typeof documentFile === "string" ? documentFile.trim() : "",
+    )
+    .filter(Boolean);
 }
 
 function assertAllowedTransition(

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SidebarIcon } from "@/components/SidebarIcon";
 
 type UserRole = "admin" | "manager" | "agent";
 
@@ -96,6 +97,8 @@ type Dossier = {
   source_type: string;
   status: string;
   appointment_date: string | null;
+  document_ids?: string[];
+  document_files?: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -303,6 +306,7 @@ export default function AdminPage() {
     useState<ConvertLeadForm>(emptyConvertLeadForm);
   const [commissionRuleForm, setCommissionRuleForm] =
     useState<CommissionRuleForm>(emptyCommissionRuleForm);
+  const [rdvDocumentFiles, setRdvDocumentFiles] = useState<File[]>([]);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [message, setMessage] = useState("");
@@ -834,6 +838,7 @@ export default function AdminPage() {
       appointment_date: "",
       notes: lead.notes,
     });
+    setRdvDocumentFiles([]);
     setMessage("");
   }
 
@@ -843,6 +848,12 @@ export default function AdminPage() {
     setActionLoading("convert-lead");
 
     try {
+      const uploadedDocuments = rdvDocumentFiles.length
+        ? await Promise.all(
+            rdvDocumentFiles.map((file) => uploadFile(file, "document")),
+          )
+        : [];
+
       const response = await fetch(
         `/api/leads/${convertLeadForm.lead_id}/convert`,
         {
@@ -858,6 +869,7 @@ export default function AdminPage() {
             surface_range: convertLeadForm.surface_range,
             appointment_date: convertLeadForm.appointment_date || null,
             notes: convertLeadForm.notes,
+            document_files: uploadedDocuments.map((file) => file.url),
           }),
         },
       );
@@ -882,11 +894,48 @@ export default function AdminPage() {
         ),
       );
       setConvertLeadForm(emptyConvertLeadForm);
+      setRdvDocumentFiles([]);
       setMessageType("success");
       setMessage("Lead converti en dossier avec succes.");
     } finally {
       setActionLoading("");
     }
+  }
+
+  async function uploadFile(file: File, type: "document") {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", type);
+
+    const response = await fetch("/api/uploads", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error ?? `Upload failed for ${file.name}.`);
+    }
+
+    return data.file as { url: string; originalName: string };
+  }
+
+  function addRdvDocumentFiles(files: File[]) {
+    if (!files.length) {
+      return;
+    }
+
+    setRdvDocumentFiles((currentFiles) => [
+      ...currentFiles,
+      ...files,
+    ]);
+  }
+
+  function removeRdvDocumentInput(index: number) {
+    setRdvDocumentFiles((currentFiles) =>
+      currentFiles.filter((_file, currentIndex) => currentIndex !== index),
+    );
   }
 
   async function changeDossierStatus(id: string, status: DossierStatus) {
@@ -1094,7 +1143,9 @@ export default function AdminPage() {
             onClick={() => setActiveTab("dashboard")}
             type="button"
           >
-            <span className="admin-v2-nav-dot" />
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="chart" />
+            </span>
             Dashboard
           </button>
           <button
@@ -1102,7 +1153,9 @@ export default function AdminPage() {
             onClick={() => setActiveTab("users")}
             type="button"
           >
-            <span className="admin-v2-nav-dot" />
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="users" />
+            </span>
             Gestion agents
           </button>
           <button
@@ -1110,7 +1163,9 @@ export default function AdminPage() {
             onClick={() => setActiveTab("leads")}
             type="button"
           >
-            <span className="admin-v2-nav-dot" />
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="lead" />
+            </span>
             Leads
           </button>
           <button
@@ -1118,7 +1173,9 @@ export default function AdminPage() {
             onClick={() => setActiveTab("dossiers")}
             type="button"
           >
-            <span className="admin-v2-nav-dot" />
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="folder" />
+            </span>
             Dossiers
           </button>
           <button
@@ -1126,7 +1183,9 @@ export default function AdminPage() {
             onClick={() => setActiveTab("commissionRules")}
             type="button"
           >
-            <span className="admin-v2-nav-dot" />
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="grid" />
+            </span>
             Grille commissions
           </button>
           <button
@@ -1134,7 +1193,9 @@ export default function AdminPage() {
             onClick={() => setActiveTab("commissions")}
             type="button"
           >
-            <span className="admin-v2-nav-dot" />
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="wallet" />
+            </span>
             Commissions
           </button>
           <button
@@ -1142,7 +1203,9 @@ export default function AdminPage() {
             onClick={() => setActiveTab("departments")}
             type="button"
           >
-            <span className="admin-v2-nav-dot" />
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="building" />
+            </span>
             Departments
           </button>
           <button
@@ -1150,7 +1213,9 @@ export default function AdminPage() {
             onClick={() => setActiveTab("sales")}
             type="button"
           >
-            <span className="admin-v2-nav-dot" />
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="sale" />
+            </span>
             Ventes
           </button>
         </nav>
@@ -1971,7 +2036,10 @@ export default function AdminPage() {
                   </div>
                   <button
                     className="admin-v2-secondary"
-                    onClick={() => setConvertLeadForm(emptyConvertLeadForm)}
+                    onClick={() => {
+                      setConvertLeadForm(emptyConvertLeadForm);
+                      setRdvDocumentFiles([]);
+                    }}
                     type="button"
                   >
                     Fermer
@@ -2081,6 +2149,57 @@ export default function AdminPage() {
                       value={convertLeadForm.notes}
                     />
                   </label>
+                  <div className="span-2 agent-documents-builder">
+                    <div className="agent-document-input-row">
+                      <div>
+                        <strong>Documents RDV</strong>
+                        <p className="agent-file-hint">
+                          {rdvDocumentFiles.length
+                            ? `${rdvDocumentFiles.length} document(s) selectionne(s)`
+                            : "Aucun document selectionne"}
+                        </p>
+                      </div>
+                      <label
+                        className="agent-plus-upload"
+                        title="Ajouter des documents RDV"
+                      >
+                        <span aria-hidden="true">+</span>
+                        <input
+                          accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
+                          multiple
+                          onChange={(event) => {
+                            const selectedFiles = Array.from(
+                              event.currentTarget.files ?? [],
+                            );
+                            addRdvDocumentFiles(selectedFiles);
+                            event.currentTarget.value = "";
+                          }}
+                          type="file"
+                        />
+                      </label>
+                    </div>
+                    {rdvDocumentFiles.length ? (
+                      <div className="agent-selected-document-list">
+                        {rdvDocumentFiles.map((file, index) => (
+                          <div
+                            className="agent-document-input-row"
+                            key={`${file.name}-${index}`}
+                          >
+                            <p className="agent-file-hint">
+                              Document {index + 1}: {file.name}
+                            </p>
+                            <button
+                              className="agent-remove-document"
+                              onClick={() => removeRdvDocumentInput(index)}
+                              type="button"
+                            >
+                              Retirer
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="admin-v2-actions">
                   <button
@@ -2114,17 +2233,24 @@ export default function AdminPage() {
                       <th>Agent</th>
                       <th>Produit</th>
                       <th>Contact</th>
+                      <th>Documents</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan={7}>Loading...</td>
+                        <td colSpan={8}>Loading...</td>
                       </tr>
                     ) : leads.length ? (
                       leads.map((lead) => {
                         const agent = userById.get(lead.assigned_agent_id);
+                        const relatedDossier = dossiers.find(
+                          (dossier) =>
+                            dossier.lead_id === lead.id ||
+                            dossier.id === lead.converted_dossier_id,
+                        );
+                        const documentFiles = relatedDossier?.document_files ?? [];
 
                         return (
                           <tr key={lead.id}>
@@ -2141,6 +2267,25 @@ export default function AdminPage() {
                             <td>
                               <strong>{lead.phone}</strong>
                               <span className="muted-line">{lead.email || "-"}</span>
+                            </td>
+                            <td>
+                              {documentFiles.length ? (
+                                <div className="agent-document-list">
+                                  {documentFiles.map((documentFile, index) => (
+                                    <a
+                                      className="agent-document-link"
+                                      href={documentFile}
+                                      key={`${documentFile}-${index}`}
+                                      rel="noreferrer"
+                                      target="_blank"
+                                    >
+                                      Document {index + 1}
+                                    </a>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="muted-line">-</span>
+                              )}
                             </td>
                             <td>
                               {lead.converted_dossier_id ? (
@@ -2162,7 +2307,7 @@ export default function AdminPage() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={7}>Aucun lead trouve.</td>
+                        <td colSpan={8}>Aucun lead trouve.</td>
                       </tr>
                     )}
                   </tbody>

@@ -26,6 +26,8 @@ export type DossierDocument = {
   mpr_deposit_date: Date | null;
   installation_date: Date | null;
   notes: string;
+  document_ids?: string[];
+  document_files?: string[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -48,6 +50,8 @@ export type PublicDossier = {
   mpr_deposit_date: string | null;
   installation_date: string | null;
   notes: string;
+  document_ids: string[];
+  document_files: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -69,6 +73,8 @@ export type CreateDossierInput = {
   mpr_deposit_date?: string | null;
   installation_date?: string | null;
   notes?: string;
+  document_ids?: string[];
+  document_files?: string[];
 };
 
 export type UpdateDossierInput = Partial<CreateDossierInput>;
@@ -80,6 +86,7 @@ export type ConvertLeadToDossierInput = {
   surface_range: SurfaceRange;
   appointment_date?: string | null;
   notes?: string;
+  document_files?: string[];
 };
 
 export type ChangeDossierStatusInput = {

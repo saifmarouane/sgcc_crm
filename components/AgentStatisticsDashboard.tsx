@@ -276,16 +276,16 @@ export default function AgentStatisticsDashboard() {
       value: payload.summary.totalDossiersSigned,
       sub: `${payload.summary.totalDossiers} dossiers`,
     },
-    {
-      label: "Commissions",
-      value: euro(payload.summary.totalCommissionsAmount),
-      sub: `${payload.summary.totalCommissions} lignes`,
-    },
-    {
-      label: "Payees",
-      value: euro(payload.summary.totalCommissionsPaidAmount),
-      sub: `${paidRate}% du total`,
-    },
+    // {
+    //   label: "Commissions",
+    //   value: euro(payload.summary.totalCommissionsAmount),
+    //   sub: `${payload.summary.totalCommissions} lignes`,
+    // },
+    // {
+    //   label: "Payees",
+    //   value: euro(payload.summary.totalCommissionsPaidAmount),
+    //   sub: `${paidRate}% du total`,
+    // },
     {
       label: "En attente",
       value: euro(payload.summary.totalCommissionsPendingAmount),
@@ -513,8 +513,8 @@ export default function AgentStatisticsDashboard() {
                   <th>Agent</th>
                   <th>Leads</th>
                   <th>Dossiers</th>
-                  <th>Commissions</th>
-                  <th>Payees</th>
+                  {/* <th>Commissions</th>
+                  <th>Payees</th> */}
                   <th>V1 ventes</th>
                   <th>Departement</th>
                   <th>Derniere vente</th>
@@ -559,14 +559,14 @@ export default function AgentStatisticsDashboard() {
                         <strong>{agent.dossiersSigned}/{agent.dossiersCount}</strong>
                         <small>{agent.dossiersInstalled} poses</small>
                       </td>
-                      <td>
+                      {/* <td>
                         <strong>{euro(agent.commissionsAmount)}</strong>
                         <small>{agent.commissionsCount} commissions</small>
-                      </td>
-                      <td>
+                      </td> */}
+                      {/* <td>
                         <strong>{euro(agent.commissionsPaidAmount)}</strong>
                         <small>{euro(agent.commissionsPendingAmount)} attente</small>
-                      </td>
+                      </td> */}
                       <td>
                         <strong>{agent.nombreVentes}</strong>
                         <small>{agent.nombreFactures} factures</small>

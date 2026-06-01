@@ -2,6 +2,7 @@
 
 import { FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SidebarIcon, type SidebarIconName } from "@/components/SidebarIcon";
 
 type ManagerUser = {
   id: string;
@@ -373,20 +374,25 @@ export default function ManagerPage() {
           </div>
         </div>
         <nav className="manager-nav">
-          {[
-            ["dashboard", "Dashboard"],
-            ["leads", "Leads equipe"],
-            ["dossiers", "Dossiers"],
-            ["commissions", "Commissions"],
-            ["rules", "Grille"],
-            ["team", "Equipe"],
-          ].map(([view, label]) => (
+          {(
+            [
+              ["dashboard", "Dashboard", "chart"],
+              ["leads", "Leads equipe", "lead"],
+              ["dossiers", "Dossiers", "folder"],
+              ["commissions", "Commissions", "wallet"],
+              ["rules", "Grille", "grid"],
+              ["team", "Equipe", "users"],
+            ] satisfies Array<[ManagerView, string, SidebarIconName]>
+          ).map(([view, label, icon]) => (
             <button
               className={activeView === view ? "active" : ""}
               key={view}
-              onClick={() => setActiveView(view as ManagerView)}
+              onClick={() => setActiveView(view)}
               type="button"
             >
+              <span className="sidebar-nav-icon">
+                <SidebarIcon name={icon} />
+              </span>
               {label}
             </button>
           ))}

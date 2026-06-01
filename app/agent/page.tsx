@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SidebarIcon } from "@/components/SidebarIcon";
 
 type AgentUser = {
   id: string;
@@ -89,6 +90,8 @@ type Dossier = {
   source_type: string;
   status: string;
   appointment_date: string | null;
+  document_ids?: string[];
+  document_files?: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -224,6 +227,7 @@ export default function AgentPage() {
   });
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [factureFiles, setFactureFiles] = useState<File[]>([]);
+  const [rdvDocumentFiles, setRdvDocumentFiles] = useState<File[]>([]);
   const [saleMotif, setSaleMotif] = useState("");
   const [extraFactureFilesBySale, setExtraFactureFilesBySale] = useState<
     Record<string, File[]>
@@ -513,6 +517,7 @@ export default function AgentPage() {
       appointment_date: "",
       notes: lead.notes,
     });
+    setRdvDocumentFiles([]);
     setMessageType("success");
     setMessage("Complete les informations de conversion dans le panneau Lead vers dossier.");
   }
@@ -523,6 +528,12 @@ export default function AgentPage() {
     setActionLoading("convert-lead");
 
     try {
+      const uploadedDocuments = rdvDocumentFiles.length
+        ? await Promise.all(
+            rdvDocumentFiles.map((file) => uploadFile(file, "document")),
+          )
+        : [];
+
       const response = await fetch(
         `/api/leads/${convertLeadForm.lead_id}/convert`,
         {
@@ -538,6 +549,7 @@ export default function AgentPage() {
             surface_range: convertLeadForm.surface_range,
             appointment_date: convertLeadForm.appointment_date || null,
             notes: convertLeadForm.notes,
+            document_files: uploadedDocuments.map((file) => file.url),
           }),
         },
       );
@@ -562,6 +574,7 @@ export default function AgentPage() {
         ),
       );
       setConvertLeadForm(emptyConvertLeadForm);
+      setRdvDocumentFiles([]);
       setMessageType("success");
       setMessage("Lead converti en dossier avec succes.");
     } catch (error) {
@@ -762,6 +775,23 @@ export default function AgentPage() {
     );
   }
 
+  function addRdvDocumentFiles(files: File[]) {
+    if (!files.length) {
+      return;
+    }
+
+    setRdvDocumentFiles((currentFiles) => [
+      ...currentFiles,
+      ...files,
+    ]);
+  }
+
+  function removeRdvDocumentInput(index: number) {
+    setRdvDocumentFiles((currentFiles) =>
+      currentFiles.filter((_file, currentIndex) => currentIndex !== index),
+    );
+  }
+
   function addExtraFactureFiles(venteId: string, files: FileList | null) {
     if (!files?.length) {
       return;
@@ -835,6 +865,9 @@ export default function AgentPage() {
             onClick={() => setActiveView("profile")}
             type="button"
           >
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="profile" />
+            </span>
             <span>Profile</span>
           </button>
           <button
@@ -842,6 +875,9 @@ export default function AgentPage() {
             onClick={() => setActiveView("leads")}
             type="button"
           >
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="lead" />
+            </span>
             <span>Mes leads</span>
           </button>
           <button
@@ -849,6 +885,9 @@ export default function AgentPage() {
             onClick={() => setActiveView("dossiers")}
             type="button"
           >
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="folder" />
+            </span>
             <span>Mes dossiers</span>
           </button>
           <button
@@ -856,6 +895,9 @@ export default function AgentPage() {
             onClick={() => setActiveView("commissions")}
             type="button"
           >
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="wallet" />
+            </span>
             <span>Mes commissions</span>
           </button>
           <button
@@ -863,6 +905,9 @@ export default function AgentPage() {
             onClick={() => setActiveView("sales")}
             type="button"
           >
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="sale" />
+            </span>
             <span>Mes ventes</span>
           </button>
         </nav>
@@ -1277,7 +1322,10 @@ export default function AgentPage() {
                   </div>
                   <button
                     className="agent-secondary-button"
-                    onClick={() => setConvertLeadForm(emptyConvertLeadForm)}
+                    onClick={() => {
+                      setConvertLeadForm(emptyConvertLeadForm);
+                      setRdvDocumentFiles([]);
+                    }}
                     type="button"
                   >
                     Fermer
@@ -1388,6 +1436,57 @@ export default function AgentPage() {
                       value={convertLeadForm.notes}
                     />
                   </label>
+                  <div className="span-2 agent-documents-builder">
+                    <div className="agent-document-input-row">
+                      <div>
+                        <strong>Documents RDV</strong>
+                        <p className="agent-file-hint">
+                          {rdvDocumentFiles.length
+                            ? `${rdvDocumentFiles.length} document(s) selectionne(s)`
+                            : "Aucun document selectionne"}
+                        </p>
+                      </div>
+                      <label
+                        className="agent-plus-upload"
+                        title="Ajouter des documents RDV"
+                      >
+                        <span aria-hidden="true">+</span>
+                        <input
+                          accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
+                          multiple
+                          onChange={(event) => {
+                            const selectedFiles = Array.from(
+                              event.currentTarget.files ?? [],
+                            );
+                            addRdvDocumentFiles(selectedFiles);
+                            event.currentTarget.value = "";
+                          }}
+                          type="file"
+                        />
+                      </label>
+                    </div>
+                    {rdvDocumentFiles.length ? (
+                      <div className="agent-selected-document-list">
+                        {rdvDocumentFiles.map((file, index) => (
+                          <div
+                            className="agent-document-input-row"
+                            key={`${file.name}-${index}`}
+                          >
+                            <p className="agent-file-hint">
+                              Document {index + 1}: {file.name}
+                            </p>
+                            <button
+                              className="agent-remove-document"
+                              onClick={() => removeRdvDocumentInput(index)}
+                              type="button"
+                            >
+                              Retirer
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
                 <button
                   className="agent-primary-button"
@@ -1418,48 +1517,77 @@ export default function AgentPage() {
                       <th>Statut</th>
                       <th>Produit</th>
                       <th>Contact</th>
+                      <th>Documents</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan={6}>Loading...</td>
+                        <td colSpan={7}>Loading...</td>
                       </tr>
                     ) : leads.length ? (
-                      leads.map((lead) => (
-                        <tr key={lead.id}>
-                          <td>
-                            <strong>
-                              {lead.first_name} {lead.last_name}
-                            </strong>
-                            <span className="muted-line">{lead.address || "-"}</span>
-                          </td>
-                          <td>{lead.source}</td>
-                          <td>{lead.status}</td>
-                          <td>{lead.desired_product || "-"}</td>
-                          <td>
-                            <strong>{lead.phone}</strong>
-                            <span className="muted-line">{lead.email || "-"}</span>
-                          </td>
-                          <td>
-                            {lead.converted_dossier_id ? (
-                              <span className="muted-line">Dossier cree</span>
-                            ) : (
-                              <button
-                                className="agent-secondary-button"
-                                onClick={() => startLeadConversion(lead)}
-                                type="button"
-                              >
-                                Convertir
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))
+                      leads.map((lead) => {
+                        const relatedDossier = dossiers.find(
+                          (dossier) =>
+                            dossier.lead_id === lead.id ||
+                            dossier.id === lead.converted_dossier_id,
+                        );
+                        const documentFiles = relatedDossier?.document_files ?? [];
+
+                        return (
+                          <tr key={lead.id}>
+                            <td>
+                              <strong>
+                                {lead.first_name} {lead.last_name}
+                              </strong>
+                              <span className="muted-line">{lead.address || "-"}</span>
+                            </td>
+                            <td>{lead.source}</td>
+                            <td>{lead.status}</td>
+                            <td>{lead.desired_product || "-"}</td>
+                            <td>
+                              <strong>{lead.phone}</strong>
+                              <span className="muted-line">{lead.email || "-"}</span>
+                            </td>
+                            <td>
+                              {documentFiles.length ? (
+                                <div className="agent-document-list">
+                                  {documentFiles.map((documentFile, index) => (
+                                    <a
+                                      className="agent-document-link"
+                                      href={documentFile}
+                                      key={`${documentFile}-${index}`}
+                                      rel="noreferrer"
+                                      target="_blank"
+                                    >
+                                      Document {index + 1}
+                                    </a>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="muted-line">-</span>
+                              )}
+                            </td>
+                            <td>
+                              {lead.converted_dossier_id ? (
+                                <span className="muted-line">Dossier cree</span>
+                              ) : (
+                                <button
+                                  className="agent-secondary-button"
+                                  onClick={() => startLeadConversion(lead)}
+                                  type="button"
+                                >
+                                  Convertir
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
-                        <td colSpan={6}>Aucun lead trouve.</td>
+                        <td colSpan={7}>Aucun lead trouve.</td>
                       </tr>
                     )}
                   </tbody>
