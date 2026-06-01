@@ -5,6 +5,8 @@ import { CommissionService } from "@/domains/commissions/commission.service";
 import { DocumentService } from "@/domains/documents/document.service";
 import { LeadRepository } from "@/domains/leads/lead.repository";
 import { toPublicLead } from "@/domains/leads/lead.mapper";
+import type { LeadDocument } from "@/domains/leads/lead.types";
+import { MailService } from "@/domains/shared/mail.service";
 import {
   COLOR,
   DOSSIER_STATUS,
@@ -40,6 +42,8 @@ import type {
 } from "./dossier.types";
 
 const MAX_LIMIT = 200;
+const APPOINTMENT_EMAIL_TO = ["mohamed.marouane.saif@gmail.com"];
+const APPOINTMENT_EMAIL_CC = ["saif.m@atirao.ma"];
 const validDossierStatuses = new Set<DossierStatus>(
   Object.values(DOSSIER_STATUS),
 );
@@ -97,6 +101,7 @@ export class DossierService {
     private readonly activityLogService = new ActivityLogService(),
     private readonly commissionService = new CommissionService(),
     private readonly documentService = new DocumentService(),
+    private readonly mailService = new MailService(),
   ) {}
 
   async create(
@@ -201,6 +206,14 @@ export class DossierService {
       await this.commissionService.ensureCalculatedForDossier(updatedDossier, actor);
     }
 
+    if (nextStatus === DOSSIER_STATUS.RDV_PLANIFIE && updatedDossier.appointment_date) {
+      const lead = await this.leadRepository.findById(updatedDossier.lead_id);
+
+      if (lead) {
+        await this.sendAppointmentEmail(lead, updatedDossier, updatedDossier.appointment_date);
+      }
+    }
+
     return toPublicDossier(updatedDossier);
   }
 
@@ -240,6 +253,7 @@ export class DossierService {
     );
 
     const now = new Date();
+    const appointmentDate = parseOptionalDate(input.appointment_date, "appointment_date");
     const dossier = await this.repository.create({
       lead_id: leadId,
       client_id: leadId,
@@ -253,7 +267,7 @@ export class DossierService {
         ? DOSSIER_STATUS.RDV_PLANIFIE
         : DOSSIER_STATUS.NOUVEAU,
       first_contact_date: lead.first_contact_date,
-      appointment_date: parseOptionalDate(input.appointment_date, "appointment_date"),
+      appointment_date: appointmentDate,
       quote_sent_date: null,
       signature_date: null,
       mpr_deposit_date: null,
@@ -275,6 +289,10 @@ export class DossierService {
       dossier: toPublicDossier(dossier),
       lead: updatedLead ? toPublicLead(updatedLead) : null,
     });
+
+    if (appointmentDate) {
+      await this.sendAppointmentEmail(lead, dossier, appointmentDate);
+    }
 
     return toPublicDossier(dossier);
   }
@@ -361,6 +379,29 @@ export class DossierService {
       old_value: oldValue,
       new_value: newValue,
     });
+  }
+
+  private async sendAppointmentEmail(
+    lead: LeadDocument,
+    dossier: DossierDocument,
+    appointmentDate: Date,
+  ): Promise<void> {
+    try {
+      const agent = await this.authService.getCurrentUser(dossier.assigned_agent_id);
+      const ccRecipients = [...APPOINTMENT_EMAIL_CC, lead.email].filter(Boolean);
+
+      await this.mailService.sendAppointmentPlanned({
+        to: APPOINTMENT_EMAIL_TO.join(","),
+        cc: ccRecipients,
+        clientName: `${lead.first_name} ${lead.last_name}`.trim(),
+        appointmentDate,
+        product: dossier.product,
+        address: lead.address,
+        agentName: agent.name,
+      });
+    } catch (error) {
+      console.error("Appointment email send failed.", error);
+    }
   }
 }
 
