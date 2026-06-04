@@ -4515,3 +4515,230 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.mpr-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.mpr-header,
+.mpr-card-header {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.mpr-header h2,
+.mpr-card-header p {
+  margin: 0;
+}
+
+.mpr-header p,
+.mpr-help,
+.mpr-muted {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.mpr-header select,
+.mpr-form-grid input,
+.mpr-form-grid select,
+.mpr-form-grid textarea,
+.mpr-upload input,
+.mpr-upload select {
+  border: 1px solid #d8dee9;
+  border-radius: 8px;
+  font: inherit;
+  min-height: 40px;
+  padding: 9px 11px;
+}
+
+.mpr-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mpr-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.mpr-card > span,
+.mpr-stack span {
+  color: #374151;
+  font-size: 14px;
+}
+
+.mpr-form-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mpr-form-grid label,
+.mpr-header label {
+  color: #374151;
+  display: grid;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 7px;
+}
+
+.mpr-form-grid textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.mpr-form-grid .span-2 {
+  grid-column: 1 / -1;
+}
+
+.mpr-fieldset {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 12px;
+}
+
+.mpr-fieldset legend {
+  color: #374151;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 6px;
+}
+
+.mpr-fieldset label {
+  align-items: center;
+  display: flex;
+  font-weight: 600;
+}
+
+.mpr-badge {
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+.mpr-badge.eligible {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.mpr-badge.non_eligible {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.mpr-badge.incomplete {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.mpr-tags,
+.mpr-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mpr-tags span,
+.mpr-links a {
+  background: #eef2ff;
+  border-radius: 999px;
+  color: #3730a3;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 10px;
+  text-decoration: none;
+}
+
+.mpr-reasons,
+.mpr-document-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.mpr-document-list li {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.mpr-document-list span {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.mpr-upload {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 130px;
+}
+
+.mpr-primary,
+.mpr-upload button {
+  background: #111827;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 40px;
+  padding: 10px 14px;
+}
+
+.mpr-primary:disabled,
+.mpr-upload button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.mpr-message {
+  border-radius: 8px;
+  font-weight: 700;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.mpr-message.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.mpr-message.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.mpr-stack {
+  display: grid;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .mpr-grid,
+  .mpr-form-grid,
+  .mpr-upload {
+    grid-template-columns: 1fr;
+  }
+
+  .mpr-header,
+  .mpr-card-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MaPrimeRenovEligibilityPanel } from "@/components/MaPrimeRenovEligibilityPanel";
 import { SidebarIcon } from "@/components/SidebarIcon";
 
 type UserRole = "admin" | "manager" | "agent";
@@ -288,6 +289,7 @@ export default function AdminPage() {
     | "sales"
     | "leads"
     | "dossiers"
+    | "mpr"
     | "commissionRules"
     | "commissions"
   >("dashboard");
@@ -331,6 +333,7 @@ export default function AdminPage() {
     users: "Gestion des agents",
     leads: "Leads",
     dossiers: "Dossiers",
+    mpr: "MaPrimeRenov",
     commissionRules: "Grille commissions",
     commissions: "Commissions",
     departments: "Departments",
@@ -1177,6 +1180,16 @@ export default function AdminPage() {
               <SidebarIcon name="folder" />
             </span>
             Dossiers
+          </button>
+          <button
+            className={activeTab === "mpr" ? "active" : ""}
+            onClick={() => setActiveTab("mpr")}
+            type="button"
+          >
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="folder" />
+            </span>
+            MaPrimeRenov
           </button>
           <button
             className={activeTab === "commissionRules" ? "active" : ""}
@@ -2430,6 +2443,15 @@ export default function AdminPage() {
               </table>
             </div>
           </section>
+        ) : null}
+
+        {activeTab === "mpr" ? (
+          <MaPrimeRenovEligibilityPanel
+            agentsById={userById}
+            leads={leads}
+            title="Dossiers MaPrimeRenov globaux"
+            token={token}
+          />
         ) : null}
 
         {activeTab === "commissionRules" ? (

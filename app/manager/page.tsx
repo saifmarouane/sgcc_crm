@@ -2,6 +2,7 @@
 
 import { FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MaPrimeRenovEligibilityPanel } from "@/components/MaPrimeRenovEligibilityPanel";
 import { SidebarIcon, type SidebarIconName } from "@/components/SidebarIcon";
 
 type ManagerUser = {
@@ -111,7 +112,8 @@ type ManagerView =
   | "dossiers"
   | "commissions"
   | "rules"
-  | "team";
+  | "team"
+  | "mpr";
 
 const emptyLeadForm: LeadForm = {
   first_name: "",
@@ -379,6 +381,7 @@ export default function ManagerPage() {
               ["dashboard", "Dashboard", "chart"],
               ["leads", "Leads equipe", "lead"],
               ["dossiers", "Dossiers", "folder"],
+              ["mpr", "MaPrimeRenov", "folder"],
               ["commissions", "Commissions", "wallet"],
               ["rules", "Grille", "grid"],
               ["team", "Equipe", "users"],
@@ -639,6 +642,15 @@ export default function ManagerPage() {
               </table>
             </div>
           </section>
+        ) : null}
+
+        {activeView === "mpr" ? (
+          <MaPrimeRenovEligibilityPanel
+            agentsById={agentById}
+            leads={leads}
+            title="Dossiers MaPrimeRenov equipe"
+            token={token}
+          />
         ) : null}
 
         {activeView === "commissions" ? (

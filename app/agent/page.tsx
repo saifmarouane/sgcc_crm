@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MaPrimeRenovEligibilityPanel } from "@/components/MaPrimeRenovEligibilityPanel";
 import { SidebarIcon } from "@/components/SidebarIcon";
 
 type AgentUser = {
@@ -152,7 +153,13 @@ type DashboardPayload = {
   };
 };
 
-type AgentView = "profile" | "sales" | "leads" | "dossiers" | "commissions";
+type AgentView =
+  | "profile"
+  | "sales"
+  | "leads"
+  | "dossiers"
+  | "commissions"
+  | "mpr";
 
 const emptyLeadForm: LeadForm = {
   first_name: "",
@@ -891,6 +898,16 @@ export default function AgentPage() {
             <span>Mes dossiers</span>
           </button>
           <button
+            className={activeView === "mpr" ? "active" : ""}
+            onClick={() => setActiveView("mpr")}
+            type="button"
+          >
+            <span className="sidebar-nav-icon">
+              <SidebarIcon name="folder" />
+            </span>
+            <span>MaPrimeRenov</span>
+          </button>
+          <button
             className={activeView === "commissions" ? "active" : ""}
             onClick={() => setActiveView("commissions")}
             type="button"
@@ -979,7 +996,13 @@ export default function AgentPage() {
           </div>
         </section>
 
-        {activeView === "commissions" ? (
+        {activeView === "mpr" ? (
+          <MaPrimeRenovEligibilityPanel
+            leads={leads}
+            title="Qualification MaPrimeRenov"
+            token={token}
+          />
+        ) : activeView === "commissions" ? (
           <section className="agent-card agent-sales-table-card">
             <div className="agent-card-header">
               <div>
