@@ -4,6 +4,7 @@ export type NotificationDocument = {
   _id?: ObjectId;
   user_id: string;
   notification: string;
+  readAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -12,6 +13,7 @@ export type PublicNotification = {
   id: string;
   user_id: string;
   notification: string;
+  readAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -22,5 +24,6 @@ export type CreateNotificationInput = {
 };
 
 export type UpdateNotificationInput = {
-  notification: string;
+  notification?: string;
+  read?: boolean;
 };

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MaPrimeRenovEligibilityPanel } from "@/components/MaPrimeRenovEligibilityPanel";
 import { SidebarIcon } from "@/components/SidebarIcon";
+import { TopbarWidgets } from "@/components/TopbarWidgets";
 
 type AgentUser = {
   id: string;
@@ -851,22 +852,8 @@ export default function AgentPage() {
           </div>
         </div>
 
-        <div className="agent-user-mini">
-          <div className="agent-avatar">
-            {profile.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img alt="" src={profile.image} />
-            ) : (
-              profile.name.slice(0, 2).toUpperCase()
-            )}
-          </div>
-          <div>
-            <strong>{user?.name ?? "Agent"}</strong>
-            <span>{departmentName}</span>
-          </div>
-        </div>
-
         <nav className="agent-nav" aria-label="Agent navigation">
+          <span className="agent-nav-section">Navigation</span>
           <button
             className={activeView === "profile" ? "active" : ""}
             onClick={() => setActiveView("profile")}
@@ -897,6 +884,7 @@ export default function AgentPage() {
             </span>
             <span>Mes dossiers</span>
           </button>
+          <span className="agent-nav-section">Ressources</span>
           <button
             className={activeView === "mpr" ? "active" : ""}
             onClick={() => setActiveView("mpr")}
@@ -929,6 +917,21 @@ export default function AgentPage() {
           </button>
         </nav>
 
+        <div className="agent-user-mini">
+          <div className="agent-avatar">
+            {profile.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img alt="" src={profile.image} />
+            ) : (
+              profile.name.slice(0, 2).toUpperCase()
+            )}
+          </div>
+          <div>
+            <strong>{user?.name ?? "Agent"}</strong>
+            <span>{departmentName}</span>
+          </div>
+        </div>
+
         <button className="agent-logout" onClick={logout} type="button">
           Logout
         </button>
@@ -940,21 +943,24 @@ export default function AgentPage() {
             <p>Bonjour</p>
             <h1>{user?.name ?? "Agent"}</h1>
           </div>
-          <button
-            className="agent-refresh"
-            onClick={() => loadAgentWorkspace()}
-            disabled={loading}
-            type="button"
-          >
-            {loading ? (
-              <span className="button-loading-label">
-                <span className="button-spinner" />
-                Refreshing...
-              </span>
-            ) : (
-              "Refresh"
-            )}
-          </button>
+          <div className="topbar-actions">
+            <button
+              className="topbar-refresh"
+              onClick={() => loadAgentWorkspace()}
+              disabled={loading}
+              type="button"
+            >
+              {loading ? (
+                <span className="button-loading-label">
+                  <span className="button-spinner" />
+                  Refreshing...
+                </span>
+              ) : (
+                "Refresh"
+              )}
+            </button>
+            <TopbarWidgets token={token} />
+          </div>
         </header>
 
         {message ? (

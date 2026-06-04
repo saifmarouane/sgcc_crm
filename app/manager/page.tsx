@@ -4,6 +4,7 @@ import { FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MaPrimeRenovEligibilityPanel } from "@/components/MaPrimeRenovEligibilityPanel";
 import { SidebarIcon, type SidebarIconName } from "@/components/SidebarIcon";
+import { TopbarWidgets } from "@/components/TopbarWidgets";
 
 type ManagerUser = {
   id: string;
@@ -376,6 +377,7 @@ export default function ManagerPage() {
           </div>
         </div>
         <nav className="manager-nav">
+          <span className="manager-nav-section">Navigation</span>
           {(
             [
               ["dashboard", "Dashboard", "chart"],
@@ -400,6 +402,15 @@ export default function ManagerPage() {
             </button>
           ))}
         </nav>
+        <div className="manager-user-mini">
+          <div className="manager-avatar">
+            {(user?.name ?? "Manager").slice(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <strong>{user?.name ?? "Manager"}</strong>
+            <span>Supervision</span>
+          </div>
+        </div>
         <button className="manager-logout" onClick={logout} type="button">
           Logout
         </button>
@@ -411,9 +422,12 @@ export default function ManagerPage() {
             <p>Vue equipe</p>
             <h1>Tableau de bord superviseur</h1>
           </div>
-          <button onClick={() => loadWorkspace()} type="button">
-            Actualiser
-          </button>
+          <div className="topbar-actions">
+            <button className="topbar-refresh" onClick={() => loadWorkspace()} type="button">
+              Actualiser
+            </button>
+            <TopbarWidgets token={token} />
+          </div>
         </header>
 
         {message ? (

@@ -17,6 +17,7 @@ export class NotificationService {
     const notification = await this.repository.create({
       user_id: data.user_id,
       notification: data.notification,
+      readAt: null,
       createdAt: now,
       updatedAt: now,
     });
@@ -26,6 +27,17 @@ export class NotificationService {
 
   async list(): Promise<PublicNotification[]> {
     const notifications = await this.repository.findAll();
+    return notifications.map(toPublicNotification);
+  }
+
+  async listForUser(userId: string): Promise<PublicNotification[]> {
+    const value = userId?.trim();
+
+    if (!value) {
+      throw new AppError("user_id is required.", 400);
+    }
+
+    const notifications = await this.repository.findByUserId(value);
     return notifications.map(toPublicNotification);
   }
 
@@ -43,8 +55,16 @@ export class NotificationService {
     id: string,
     input: UpdateNotificationInput,
   ): Promise<PublicNotification> {
-    const message = validateNotificationMessage(input.notification);
-    const notification = await this.repository.updateMessage(id, message);
+    let notification = null;
+
+    if (input.notification !== undefined) {
+      const message = validateNotificationMessage(input.notification);
+      notification = await this.repository.updateMessage(id, message);
+    }
+
+    if (input.read !== undefined) {
+      notification = await this.repository.updateReadState(id, Boolean(input.read));
+    }
 
     if (!notification) {
       throw new AppError("Notification not found.", 404);

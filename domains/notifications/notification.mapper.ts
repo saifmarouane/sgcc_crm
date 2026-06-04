@@ -14,6 +14,7 @@ export function toPublicNotification(
     id: notification._id.toString(),
     user_id: notification.user_id,
     notification: notification.notification,
+    readAt: notification.readAt ? notification.readAt.toISOString() : null,
     createdAt: notification.createdAt.toISOString(),
     updatedAt: notification.updatedAt.toISOString(),
   };

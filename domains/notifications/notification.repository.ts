@@ -8,6 +8,7 @@ async function notificationsCollection(): Promise<Collection<NotificationDocumen
   const db = await getDb();
   const collection = db.collection<NotificationDocument>(NOTIFICATIONS_COLLECTION);
   await collection.createIndex({ user_id: 1 });
+  await collection.createIndex({ user_id: 1, readAt: 1, createdAt: -1 });
   return collection;
 }
 
@@ -21,6 +22,11 @@ export class NotificationRepository {
   async findAll(): Promise<NotificationDocument[]> {
     const collection = await notificationsCollection();
     return collection.find().sort({ createdAt: -1 }).toArray();
+  }
+
+  async findByUserId(userId: string): Promise<NotificationDocument[]> {
+    const collection = await notificationsCollection();
+    return collection.find({ user_id: userId }).sort({ createdAt: -1 }).toArray();
   }
 
   async findById(id: string): Promise<NotificationDocument | null> {
@@ -46,6 +52,27 @@ export class NotificationRepository {
       {
         $set: {
           notification,
+          updatedAt: new Date(),
+        },
+      },
+      { returnDocument: "after" },
+    );
+  }
+
+  async updateReadState(
+    id: string,
+    read: boolean,
+  ): Promise<NotificationDocument | null> {
+    if (!ObjectId.isValid(id)) {
+      return null;
+    }
+
+    const collection = await notificationsCollection();
+    return collection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          readAt: read ? new Date() : null,
           updatedAt: new Date(),
         },
       },

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MaPrimeRenovEligibilityPanel } from "@/components/MaPrimeRenovEligibilityPanel";
 import { SidebarIcon } from "@/components/SidebarIcon";
+import { TopbarWidgets } from "@/components/TopbarWidgets";
 
 type UserRole = "admin" | "manager" | "agent";
 
@@ -1134,13 +1135,8 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="admin-v2-sidebar-card">
-          <span>Session</span>
-          <strong>Administrator</strong>
-          <small>Full access enabled</small>
-        </div>
-
         <nav className="admin-v2-nav" aria-label="Admin navigation">
+          <span className="admin-v2-nav-section">Navigation</span>
           <button
             className={activeTab === "dashboard" ? "active" : ""}
             onClick={() => setActiveTab("dashboard")}
@@ -1181,6 +1177,7 @@ export default function AdminPage() {
             </span>
             Dossiers
           </button>
+          <span className="admin-v2-nav-section">Ressources</span>
           <button
             className={activeTab === "mpr" ? "active" : ""}
             onClick={() => setActiveTab("mpr")}
@@ -1233,6 +1230,12 @@ export default function AdminPage() {
           </button>
         </nav>
 
+        <div className="admin-v2-sidebar-card">
+          <span>Session</span>
+          <strong>Administrator</strong>
+          <small>Full access enabled</small>
+        </div>
+
         <button className="admin-v2-logout" onClick={logout} type="button">
           Logout
         </button>
@@ -1244,26 +1247,23 @@ export default function AdminPage() {
             <p>Console admin</p>
             <h1>{activeTabTitle}</h1>
           </div>
-          <div className="admin-v2-topbar-tools">
-            <div className="admin-v2-search">
-              <span>Search</span>
-              <strong>Global overview</strong>
-            </div>
-          <button
-            className="admin-v2-refresh"
-            onClick={() => loadData()}
-            disabled={loading}
-            type="button"
-          >
-            {loading ? (
-              <span className="button-loading-label">
-                <span className="button-spinner" />
-                Refreshing...
-              </span>
-            ) : (
-              "Refresh"
-            )}
-          </button>
+          <div className="topbar-actions">
+            <button
+              className="topbar-refresh"
+              onClick={() => loadData()}
+              disabled={loading}
+              type="button"
+            >
+              {loading ? (
+                <span className="button-loading-label">
+                  <span className="button-spinner" />
+                  Refreshing...
+                </span>
+              ) : (
+                "Refresh"
+              )}
+            </button>
+            <TopbarWidgets token={token} />
           </div>
         </header>
 
